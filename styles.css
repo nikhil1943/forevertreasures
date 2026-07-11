@@ -1,0 +1,211 @@
+/* Base Reset & Variables */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --gold-primary: #d4af37;
+    --gold-light: #f3e5ab;
+    --gold-dark: #aa7c11;
+    --bg-black: #000000;
+    --text-white: #ffffff;
+    --text-muted: #cccccc;
+}
+
+body {
+    background-color: var(--bg-black);
+    color: var(--text-white);
+    font-family: 'Montserrat', sans-serif;
+    overflow-x: hidden;
+    line-height: 1.6;
+}
+
+/* 1. Full Screen Hero Section */
+.hero-section {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height fallback for mobile browsers */
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--bg-black);
+    position: relative;
+    padding: 20px;
+}
+
+.logo-container {
+    width: 100%;
+    max-width: 1000px; /* Limits size on massive desktop monitors */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.hero-logo {
+    width: 100%;
+    height: 100%;
+    max-height: 85vh; /* Prevents image clipping on landscape or short screens */
+    object-fit: contain; /* Keeps visual aspect ratio completely accurate */
+}
+
+/* Animated downward indicator */
+.scroll-indicator {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: var(--gold-primary);
+    font-size: 1.5rem;
+    animation: bounce 2s infinite;
+    opacity: 0.7;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translate(-50%, 0); }
+    40% { transform: translate(-50%, -10px); }
+    60% { transform: translate(-50%, -5px); }
+}
+
+/* 2. Scrolling Content Section Below */
+.content-section {
+    width: 100%;
+    background: linear-gradient(to bottom, #000000, #0a0a0a);
+    padding: 80px 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.wrapper {
+    max-width: 700px;
+    width: 100%;
+    text-align: center;
+}
+
+/* Typography Elements */
+.main-title {
+    font-family: 'Cinzel', serif;
+    font-size: 2.8rem;
+    font-weight: 400;
+    letter-spacing: 8px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    background: linear-gradient(to right, var(--gold-light) 0%, var(--gold-primary) 50%, var(--gold-dark) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Decorative Accent Divider */
+.divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 30px auto;
+    width: 45%;
+}
+
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(to right, transparent, var(--gold-primary), transparent);
+}
+
+.divider-diamond {
+    color: var(--gold-primary);
+    font-size: 10px;
+    margin: 0 14px;
+}
+
+.announcement-text {
+    font-size: 1.05rem;
+    font-weight: 200;
+    line-height: 1.9;
+    letter-spacing: 2px;
+    color: var(--text-muted);
+    margin-bottom: 60px;
+}
+
+/* 3. Fully Responsive Contact Grid */
+.contact-hub {
+    border-top: 1px solid rgba(212, 175, 55, 0.15);
+    padding-top: 40px;
+}
+
+.contact-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold-primary);
+    margin-bottom: 30px;
+}
+
+.contact-list {
+    display: grid;
+    grid-template-columns: repeat(2, 11fr); /* Clean columns on desktop viewport */
+    gap: 30px;
+}
+
+.contact-item {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.label {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    color: var(--gold-primary);
+    opacity: 0.8;
+}
+
+.value {
+    font-size: 0.9rem;
+    font-weight: 400;
+    letter-spacing: 1px;
+    color: var(--text-white);
+    text-decoration: none;
+    transition: color 0.3s ease;
+    word-break: break-word; /* Prevents overflow issues from long email addresses */
+}
+
+a.value:hover {
+    color: var(--gold-primary);
+}
+
+/* 4. Responsive Breakpoints (Media Queries) */
+@media (max-width: 768px) {
+    .content-section {
+        padding: 60px 20px;
+    }
+    .main-title {
+        font-size: 2.2rem;
+        letter-spacing: 6px;
+    }
+    /* Drops contact layout from 3 rows side-by-side to stacked columns */
+    .contact-list {
+        grid-template-columns: 1fr;
+        gap: 24px;
+    }
+    .contact-item {
+        border-bottom: 1px solid rgba(212, 175, 55, 0.05);
+        padding-bottom: 15px;
+    }
+    .contact-item:last-child {
+        border-bottom: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .main-title {
+        font-size: 1.8rem;
+        letter-spacing: 4px;
+    }
+    .announcement-text {
+        font-size: 0.95rem;
+        letter-spacing: 1px;
+    }
+}
