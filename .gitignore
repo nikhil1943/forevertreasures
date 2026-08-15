@@ -58,6 +58,9 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Environment Files
+environments/
+
 # ==========================================
 # IDEs & System Files
 # ==========================================
