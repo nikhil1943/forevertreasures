@@ -58,8 +58,10 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
-# Environment Files
-environments/
+# Environment and other Files
+forevertreasures_frontend/src/environments/prod/environment.ts
+backend/reset_admin_password.py
+backend/create_admins.py
 
 # ==========================================
 # IDEs & System Files
