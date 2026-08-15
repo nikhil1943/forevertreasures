@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700;800&family=Montserrat:wght@300;400;500;600&display=swap');
+
+:root {
+  /* Light Luxury Theme Hierarchy */
+  --bg-body: #fcfbf7;            /* Soft Ivory / Warm Off-White */
+  --bg-surface: #ffffff;         /* Pure White Surface for Cards & Inputs */
+  --bg-subtle: #f6f3eb;          /* Warm Muted Neutral for Hovers & Headers */
+  
+  /* Brand Obsidian & Black Accents */
+  --brand-black: #0b0b0b;
+  --text-primary: #1a1a1a;       /* High-contrast readable text */
+  --text-muted: #64748b;         /* Muted secondary labels */
+  
+  /* Gold Palette & Gradients */
+  --gold-primary: #c5a059;
+  --gold-light: #e6ca85;
+  --gold-dark: #8c6d2b;
+  --gold-gradient: linear-gradient(135deg, #bf953f 0%, #fcf6ba 25%, #b38728 50%, #fbf5b7 75%, #aa771c 100%);
+  --gold-gradient-hover: linear-gradient(135deg, #aa771c 0%, #bf953f 50%, #fcf6ba 100%);
+  
+  /* Typography */
+  --font-heading: 'Cinzel', serif;
+  --font-body: 'Montserrat', sans-serif;
+  
+  /* Borders & Shadows */
+  --border-gold-subtle: 1px solid rgba(197, 160, 89, 0.35);
+  --border-light: 1px solid #e2e8f0;
+  --shadow-subtle: 0 4px 20px rgba(0, 0, 0, 0.05);
+  --shadow-gold-glow: 0 4px 20px rgba(197, 160, 89, 0.25);
+}
+
+/* Global Reset & Base Styling */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Base Headings */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  color: var(--brand-black);
+  letter-spacing: 0.5px;
+}
+
+/* Form Controls & Inputs Defaults */
+input, textarea, select {
+  font-family: var(--font-body);
+  background-color: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+input::placeholder, textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* Keyframe Animations */
+@keyframes goldShimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.gold-shimmer-logo {
+  font-family: 'Cinzel', serif;
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-decoration: none;
+  background: linear-gradient(
+    110deg,
+    #bf953f 0%,
+    #fcf6ba 25%,
+    #b38728 45%,
+    #fbf5b7 55%,
+    #aa771c 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}

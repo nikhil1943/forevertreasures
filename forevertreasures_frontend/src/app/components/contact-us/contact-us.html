@@ -1,0 +1,88 @@
+<div class="contact-container">
+  <div class="contact-header">
+    <h1>Contact Us</h1>
+    <p>Have a question about an order or our treasures? We are here to assist you.</p>
+  </div>
+
+  <div class="contact-grid">
+    <!-- Contact Details Sidebar -->
+    <div class="info-card">
+      <h2>Get In Touch</h2>
+      
+      <div class="info-item">
+        <span class="icon">📍</span>
+        <div>
+          <strong>Concierge Desk</strong>
+          <p>Forever Treasures HQ, Mumbai, India</p>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <span class="icon">✉️</span>
+        <div>
+          <strong>Email Enquiries</strong>
+          <p>{{ supportEmail }}</p>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <span class="icon">📞</span>
+        <div>
+          <strong>Phone</strong>
+          <p>+91 (022) 5550-0199</p>
+        </div>
+      </div>
+
+      <div class="info-item">
+        <span class="icon">🕒</span>
+        <div>
+          <strong>Hours</strong>
+          <p>Mon - Sat: 10:00 AM - 7:00 PM IST</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enquiry Form -->
+    <div class="form-card">
+      <div *ngIf="isSubmitted" class="success-banner">
+        Thank you for reaching out! Our team will get back to you within 24 hours.
+      </div>
+
+      <form [formGroup]="contactForm" (ngSubmit)="onSubmit()">
+        <div class="form-group">
+          <label for="name">Full Name</label>
+          <input id="name" type="text" formControlName="name" placeholder="John Doe" />
+          <small class="error" *ngIf="contactForm.get('name')?.invalid && contactForm.get('name')?.touched">
+            Name is required (min 2 characters).
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email Address</label>
+          <input id="email" type="email" formControlName="email" placeholder="john@example.com" />
+          <small class="error" *ngIf="contactForm.get('email')?.invalid && contactForm.get('email')?.touched">
+            A valid email is required.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="subject">Subject</label>
+          <input id="subject" type="text" formControlName="subject" placeholder="Order Enquiry / Product Question" />
+          <small class="error" *ngIf="contactForm.get('subject')?.invalid && contactForm.get('subject')?.touched">
+            Subject is required.
+          </small>
+        </div>
+
+        <div class="form-group">
+          <label for="message">Message</label>
+          <textarea id="message" rows="5" formControlName="message" placeholder="Write your message here..."></textarea>
+          <small class="error" *ngIf="contactForm.get('message')?.invalid && contactForm.get('message')?.touched">
+            Message is required (min 10 characters).
+          </small>
+        </div>
+
+        <button type="submit" class="submit-btn">Send Message</button>
+      </form>
+    </div>
+  </div>
+</div>

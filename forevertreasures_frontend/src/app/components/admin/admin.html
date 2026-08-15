@@ -1,0 +1,214 @@
+<div class="admin-wrapper">
+  <!-- Toast Banners -->
+  <div *ngIf="successMessage()" class="alert-banner alert-success">
+    <span>✓ {{ successMessage() }}</span>
+  </div>
+  <div *ngIf="errorMessage()" class="alert-banner alert-error">
+    <span>✕ {{ errorMessage() }}</span>
+  </div>
+
+  <div class="admin-header">
+    <h1>Seller Portal</h1>
+    <div class="header-actions">
+      <div class="tab-controls">
+        <button [class.active]="activeTab() === 'inventory'" (click)="activeTab.set('inventory')">Inventory</button>
+        <button [class.active]="activeTab() === 'categories'" (click)="activeTab.set('categories')">Categories</button>
+        <button [class.active]="activeTab() === 'orders'" (click)="activeTab.set('orders')">Orders</button>
+      </div>
+
+      <div class="modal-buttons">
+        <button class="btn-primary" (click)="openAddCategoryModal()">+ New Category</button>
+        <button class="btn-primary" (click)="openAddProductModal()">+ New Product</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inventory Tab -->
+  <section *ngIf="activeTab() === 'inventory'" class="panel-section">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Product Name</th>
+          <th>Category</th>
+          <th>Price (₹)</th>
+          <th>Stock</th>
+          <th>Quick Update</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of adminService.products()">
+          <td class="sku-cell">#{{ item.id }}</td>
+          <td>
+            <strong>{{ item.title }}</strong>
+            <p class="desc-preview">{{ item.description }}</p>
+          </td>
+          <td><span class="category-pill">{{ getCategoryName(item.category_id) }}</span></td>
+          <td>₹{{ item.price | number:'1.2-2' }}</td>
+          <td>
+            <span class="stock-badge" [class.out-of-stock]="item.stock_quantity === 0">
+              {{ item.stock_quantity > 0 ? item.stock_quantity + ' in stock' : 'Out of Stock' }}
+            </span>
+          </td>
+          <td>
+            <input type="number" [value]="item.stock_quantity" min="0" (change)="onStockChange(item.id, $event)" class="stock-input" />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Categories Tab -->
+  <section *ngIf="activeTab() === 'categories'" class="panel-section">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Category Name</th>
+          <th>Slug</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let cat of adminService.categories()">
+          <td class="sku-cell">#{{ cat.id }}</td>
+          <td><strong>{{ cat.name }}</strong></td>
+          <td><code>{{ cat.slug }}</code></td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-sm btn-edit" (click)="openEditCategoryModal(cat)">Edit</button>
+              <button class="btn-sm btn-delete" (click)="deleteCategory(cat.id)">Delete</button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Order Management Tab -->
+  <section *ngIf="activeTab() === 'orders'" class="panel-section">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>Order ID</th>
+          <th>Customer</th>
+          <th>Total</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let order of adminService.orders()">
+          <td class="sku-cell">#{{ order.id }}</td>
+          <td>
+            <div>{{ order.customerName }}</div>
+            <small style="color: #888;">{{ order.email }}</small>
+          </td>
+          <td>₹{{ order.total | number:'1.2-2' }}</td>
+          <td><span class="status-badge" [attr.data-status]="order.status">{{ order.status }}</span></td>
+          <td>
+            <select [value]="order.status" (change)="onStatusChange(order.id, $event)" class="status-select">
+              <option *ngFor="let s of statuses" [value]="s">{{ s }}</option>
+            </select>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+<!-- Category Modal (Add & Edit) -->
+<div class="modal-backdrop" *ngIf="showCategoryModal()">
+  <div class="modal-card">
+    <h2>{{ editingCategory() ? 'Edit Category' : 'Create New Category' }}</h2>
+    
+    <div class="form-group">
+      <label>Category Name *</label>
+      <input type="text" [(ngModel)]="categoryName" placeholder="e.g. Diamond Rings" />
+    </div>
+
+    <div class="form-group">
+      <label>Custom Slug (Optional)</label>
+      <input type="text" [(ngModel)]="categorySlug" placeholder="e.g. diamond-rings" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" (click)="closeCategoryModal()">Cancel</button>
+      <button class="btn-primary" (click)="submitCategory()">
+        {{ editingCategory() ? 'Update Category' : 'Save Category' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Product Modal -->
+<div class="modal-backdrop" *ngIf="showProductModal()">
+  <div class="modal-card">
+    <h2>Create New Product</h2>
+    
+    <div class="form-group">
+      <label>Product Name *</label>
+      <input type="text" [(ngModel)]="newProduct.title" placeholder="e.g. Royal Emerald Pendant" />
+    </div>
+
+    <div class="form-group">
+      <label>Description</label>
+      <textarea [(ngModel)]="newProduct.description" rows="3" placeholder="Enter product description..."></textarea>
+    </div>
+
+    <!-- Dynamic Image URLs List -->
+    <div class="form-group">
+      <label>Product Image URLs (For Slideshow)</label>
+      <div 
+        *ngFor="let url of imageUrls; let i = index; trackBy: trackByIndex" 
+        class="image-url-row"
+      >
+        <input 
+          type="url" 
+          [(ngModel)]="imageUrls[i]" 
+          placeholder="https://example.com/image.jpg" 
+        />
+        <button 
+          type="button" 
+          class="btn-sm btn-delete" 
+          (click)="removeImageUrlInput(i)" 
+          title="Remove Image"
+        >
+          ✕
+        </button>
+      </div>
+      <button 
+        type="button" 
+        class="btn-secondary btn-add-image" 
+        (click)="addImageUrlInput()"
+      >
+        + Add Another Image URL
+      </button>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Price (₹ INR) *</label>
+        <input type="number" [(ngModel)]="newProduct.price" placeholder="4999" />
+      </div>
+
+      <div class="form-group">
+        <label>Stock Quantity</label>
+        <input type="number" [(ngModel)]="newProduct.stock_quantity" placeholder="10" />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Category *</label>
+      <select [(ngModel)]="newProduct.category_id" class="status-select" style="width: 100%;">
+        <option [ngValue]="null" disabled>Select a Category</option>
+        <option *ngFor="let cat of adminService.categories()" [value]="cat.id">{{ cat.name }}</option>
+      </select>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" (click)="closeProductModal()">Cancel</button>
+      <button class="btn-primary" (click)="submitProduct()">Create Product</button>
+    </div>
+  </div>
+</div>

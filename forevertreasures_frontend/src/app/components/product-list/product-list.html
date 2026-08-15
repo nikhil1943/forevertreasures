@@ -1,0 +1,90 @@
+<div class="container" style="padding: 2rem; max-width: 1200px; margin: 0 auto;">
+  <h2 class="page-title" style="margin-bottom: 1.5rem;">Explore Catalog</h2>
+
+  <!-- Filters & Search Bar -->
+  <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+    <input 
+      type="text" 
+      [(ngModel)]="searchQuery" 
+      (input)="onSearchChange()" 
+      placeholder="Search products..." 
+      style="padding: 0.5rem 1rem; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 4px;"
+    />
+
+    <button 
+      (click)="onCategorySelect(null)" 
+      [style.background-color]="selectedCategoryId === null ? '#007bff' : '#f0f0f0'"
+      [style.color]="selectedCategoryId === null ? '#fff' : '#000'"
+      style="padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+      All Categories
+    </button>
+
+    <button 
+      *ngFor="let cat of categories" 
+      (click)="onCategorySelect(cat.id)"
+      [style.background-color]="selectedCategoryId === cat.id ? '#007bff' : '#f0f0f0'"
+      [style.color]="selectedCategoryId === cat.id ? '#fff' : '#000'"
+      style="padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
+      {{ cat.name }}
+    </button>
+  </div>
+
+  <!-- Loading Indicator -->
+  <div *ngIf="loading" style="text-align: center; padding: 2rem; font-size: 1.1rem; color: #666;">
+    Loading items...
+  </div>
+
+  <!-- Product Grid -->
+  <div *ngIf="!loading" class="product-grid">
+    <div *ngFor="let product of products" class="product-card">
+      
+      <!-- Card Body -->
+      <div class="product-info">
+        <span class="category-tag">{{ product.category.name || 'General' }}</span>
+        
+        <!-- Clickable Image Container with Sliding Track -->
+        <a [routerLink]="['/products', product.id]" 
+           class="image-container"
+           (mouseenter)="startSlideshow(product)"
+           (mouseleave)="stopSlideshow(product)">
+        
+          <div class="slideshow-track" [style.transform]="'translateX(-' + (activeImageMap[product.id] || 0) * 100 + '%)'">
+            
+            <!-- Fallback if no images exist -->
+            <img *ngIf="!product.image_urls || product.image_urls.length === 0" 
+                 [src]="getSafeUrl('https://via.placeholder.com/200x200?text=No+Image')" 
+                 alt="No Image" 
+                 class="slide-image" />
+            
+            <!-- Loop through all images -->
+            <img *ngFor="let imgUrl of product.image_urls" 
+                 [src]="getSafeUrl(imgUrl)" 
+                 [alt]="product.title" 
+                 class="slide-image" />
+
+          </div>
+        </a>
+
+        <!-- Product Title Link -->
+        <h3 class="product-title">
+          <a [routerLink]="['/products', product.id]">{{ product.title }}</a>
+        </h3>
+
+        <!-- Footer Row with Price and Single Add to Cart Button -->
+        <div class="card-footer">
+          <span class="product-price">${{ product.price.toFixed(2) }}</span>
+          
+          <button 
+            class="quick-add-btn" 
+            [disabled]="product.stock_quantity === 0"
+            (click)="quickAddToCart(product, $event)">
+            {{ product.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock' }}
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+</div>

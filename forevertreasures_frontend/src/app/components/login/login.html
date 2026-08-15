@@ -1,0 +1,111 @@
+<div class="dark-background-wrapper">
+  <div class="glass-card">
+    
+    <!-- Title -->
+    <h2 class="title">
+      {{ mode() === 'login' ? 'Admin Login' : (mode() === '2fa' ? 'Security Check' : 'Create Account') }}
+    </h2>
+    <p class="subtitle">
+      {{ mode() === 'login' ? 'Sign in to access Forever Treasures.' : (mode() === '2fa' ? 'Enter the code sent to your email.' : 'Join Forever Treasures today.') }}
+    </p>
+
+    <!-- Error Message -->
+    <div class="error-alert" *ngIf="errorMessage()">
+      {{ errorMessage() }}
+    </div>
+
+    <!-- ========================================= -->
+    <!-- LOGIN FORM -->
+    <!-- ========================================= -->
+    <form *ngIf="mode() === 'login'" (ngSubmit)="onSubmitLogin($event)" class="auth-form">
+      
+      <div class="input-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required
+               [ngModel]="loginEmail()" (ngModelChange)="loginEmail.set($event)"
+               placeholder="john.doe@gmail.com" />
+      </div>
+
+      <div class="input-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required
+               [ngModel]="loginPassword()" (ngModelChange)="loginPassword.set($event)"
+               placeholder="••••••••" />
+      </div>
+
+      <button type="submit" class="gold-btn" [disabled]="isLoading()">
+        {{ isLoading() ? 'Authenticating...' : 'Sign In' }}
+      </button>
+
+      <p class="switch-mode">
+        Don't have an account? <a href="#" (click)="$event.preventDefault(); mode.set('register')">Register here</a>
+      </p>
+    </form>
+
+
+    <!-- ========================================= -->
+    <!-- 2FA VERIFICATION FORM -->
+    <!-- ========================================= -->
+    <form *ngIf="mode() === '2fa'" (ngSubmit)="onSubmit2FA($event)" class="auth-form">
+      
+      <div class="input-group">
+        <label for="twoFactorCode">6-Digit Verification Code</label>
+        <input type="text" id="twoFactorCode" name="twoFactorCode" required maxlength="6"
+               [ngModel]="twoFactorCode()" (ngModelChange)="twoFactorCode.set($event)"
+               placeholder="123456" class="center-text" />
+      </div>
+
+      <button type="submit" class="gold-btn" [disabled]="isLoading()">
+        {{ isLoading() ? 'Verifying...' : 'Verify & Login' }}
+      </button>
+
+      <button type="button" class="text-btn" (click)="cancel2FA()" [disabled]="isLoading()">
+        Cancel
+      </button>
+    </form>
+
+
+    <!-- ========================================= -->
+    <!-- REGISTRATION FORM -->
+    <!-- ========================================= -->
+    <form *ngIf="mode() === 'register'" (ngSubmit)="onSubmitRegister($event)" class="auth-form">
+      
+      <div class="input-group">
+        <label for="regName">Full Name</label>
+        <input type="text" id="regName" name="regName" required
+               [ngModel]="regName()" (ngModelChange)="regName.set($event)"
+               placeholder="John Doe" />
+      </div>
+
+      <div class="input-group">
+        <label for="regEmail">Email Address</label>
+        <input type="email" id="regEmail" name="regEmail" required
+               [ngModel]="regEmail()" (ngModelChange)="regEmail.set($event)"
+               placeholder="john@example.com" />
+      </div>
+
+      <div class="input-group">
+        <label for="regPhone">Phone Number</label>
+        <input type="tel" id="regPhone" name="regPhone"
+               [ngModel]="regPhone()" (ngModelChange)="regPhone.set($event)"
+               placeholder="+91 98765 43210" />
+      </div>
+
+      <div class="input-group">
+        <label for="regPassword">Password</label>
+        <input type="password" id="regPassword" name="regPassword" required minlength="8"
+               [ngModel]="regPassword()" (ngModelChange)="regPassword.set($event)"
+               placeholder="••••••••" />
+      </div>
+
+      <button type="submit" class="gold-btn" [disabled]="isLoading()">
+        {{ isLoading() ? 'Creating Account...' : 'Register' }}
+      </button>
+
+      <p class="switch-mode">
+        Already have an account? <a href="#" (click)="$event.preventDefault(); mode.set('login')">Sign In</a>
+      </p>
+    </form>
+
+  </div>
+</div>

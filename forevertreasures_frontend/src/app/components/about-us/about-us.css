@@ -1,0 +1,108 @@
+:host {
+  --gold-primary: #d4af37;
+  --gold-light: #f3e5ab;
+  --gold-dark: #aa7c11;
+  --bg-black: #000000;
+  --text-white: #ffffff;
+  --text-muted: #cccccc;
+  display: block;
+  background-color: var(--bg-black);
+  color: var(--text-white);
+  /* min-height: calc(100vh - 70px); */
+  min-height: 100vh;
+  padding-top: 15vh;
+}
+
+.about-container {
+  padding: 80px 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.about-wrapper {
+  max-width: 900px;
+  width: 100%;
+  text-align: center;
+}
+
+.about-title {
+  font-family: 'Cinzel', serif;
+  font-size: 2.8rem;
+  font-weight: 400;
+  letter-spacing: 8px;
+  text-transform: uppercase;
+  margin-bottom: 20px;
+  background: linear-gradient(to right, var(--gold-light) 0%, var(--gold-primary) 50%, var(--gold-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px auto;
+  width: 40%;
+}
+
+.divider::before, .divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-primary), transparent);
+}
+
+.divider-diamond {
+  color: var(--gold-primary);
+  font-size: 10px;
+  margin: 0 14px;
+}
+
+.lead-text {
+  font-size: 1.15rem;
+  line-height: 2;
+  color: var(--text-muted);
+  max-width: 750px;
+  margin: 0 auto 60px auto;
+  letter-spacing: 1px;
+}
+
+.pillars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.pillar-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 30px 20px;
+  border-radius: 6px;
+  transition: transform 0.3s ease, border-color 0.3s ease;
+}
+
+.pillar-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--gold-primary);
+}
+
+.pillar-card h3 {
+  font-family: 'Cinzel', serif;
+  color: var(--gold-primary);
+  font-size: 1.1rem;
+  margin-bottom: 15px;
+  letter-spacing: 2px;
+}
+
+.pillar-card p {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  line-height: 1.7;
+}
+
+@media (max-width: 768px) {
+  .about-title {
+    font-size: 2.2rem;
+  }
+}

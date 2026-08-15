@@ -1,0 +1,80 @@
+<div class="container">
+  <a routerLink="/products" class="back-link">&larr; Back to Products</a>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="state-box">
+    <p>Loading product details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="errorMessage && !isLoading" class="state-box error-box">
+    <p>{{ errorMessage }}</p>
+    <a routerLink="/products" class="btn btn-secondary">Browse All Products</a>
+  </div>
+
+  <!-- Product Detail Content -->
+  <div *ngIf="product && !isLoading" class="product-layout">
+    
+    <!-- Left Column: Image Gallery -->
+    <div class="gallery-section">
+      <div class="main-image-wrapper">
+        <img [src]="getSafeUrl(galleryImages[selectedImageIndex])" [alt]="product.title" class="main-image" />
+      </div>
+      <div class="thumbnail-strip">
+        <img 
+          *ngFor="let img of galleryImages; let i = index" 
+          [src]="getSafeUrl(img)" 
+          [alt]="'View ' + (i + 1)"
+          [class.active]="i === selectedImageIndex"
+          (click)="selectImage(i)"
+          class="thumbnail"
+        />
+      </div>
+    </div>
+
+    <!-- Right Column: Product Details -->
+    <div class="details-section">
+      <span class="category-badge">{{ product.category.name }}</span>
+      <h1 class="title">{{ product.title }}</h1>
+      <p class="price">${{ product.price.toFixed(2) }}</p>
+
+      <div class="stock-status">
+        <span [class.in-stock]="product.stock_quantity > 0" [class.out-of-stock]="product.stock_quantity <= 0">
+          ● {{ product.stock_quantity > 0 ? 'In Stock (' + product.stock_quantity + ' available)' : 'Out of Stock' }}
+        </span>
+      </div>
+
+      <p class="description">
+        {{ product.description || 'No product description available for this item.' }}
+      </p>
+
+      <!-- Purchase Actions & Quantity Selector -->
+      <div class="actions" *ngIf="product.stock_quantity > 0">
+        <div class="quantity-wrapper">
+          <label for="quantity">Qty:</label>
+          <input 
+            id="quantity" 
+            type="number" 
+            [(ngModel)]="quantity" 
+            min="1" 
+            [max]="product.stock_quantity" 
+            class="qty-input" 
+          />
+        </div>
+
+        <button (click)="addToCart()" class="btn btn-primary">
+          Add to Cart
+        </button>
+
+        <span *ngIf="addedMessage" class="success-badge">✓ Added!</span>
+      </div>
+
+      <div class="actions" *ngIf="product.stock_quantity <= 0">
+        <button disabled class="btn btn-secondary">
+          Out of Stock
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
