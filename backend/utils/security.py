@@ -11,11 +11,16 @@ load_dotenv()
 logger = logging.getLogger("auth_security")
 logging.basicConfig(level=logging.INFO)
 
-OTP_EMAIL = os.getenv("OTP_EMAIL", "")
-OTP_PASSWORD = os.getenv("OTP_PASSWORD", "")  # Use a Gmail App Password
+# Existing environment variables (used for Mailjet SMTP authentication)
+OTP_EMAIL = os.getenv("OTP_EMAIL", "")        # Mailjet API Key
+OTP_PASSWORD = os.getenv("OTP_PASSWORD", "")  # Mailjet Secret Key
+
+# Only new variable added (for the From header seen by the user)
+SENDER_EMAIL = os.getenv("SENDER_EMAIL", "")  # Verified email in Mailjet
+
 SUPPORT_EMAIL = os.getenv("SUPPORT_EMAIL", "")
-SMTP_HOST = os.getenv("SMTP_HOST", "smtp.gmail.com")
-SMTP_PORT = int(os.getenv("SMTP_PORT", 587))
+SMTP_HOST = os.getenv("SMTP_HOST", "in-v3.mailjet.com")
+SMTP_PORT = int(os.getenv("SMTP_PORT", 2525))
 
 def generate_otp() -> str:
     """Generates a cryptographically secure 6-digit OTP."""
@@ -27,9 +32,12 @@ def send_2fa_email_task(target_email: str, otp_code: str):
         logger.error("Email dispatch failed: OTP_EMAIL or OTP_PASSWORD environment variables are not set.")
         return
 
+    # Use SENDER_EMAIL if configured, otherwise fall back to OTP_EMAIL
+    from_address = SENDER_EMAIL if SENDER_EMAIL else OTP_EMAIL
+
     msg = EmailMessage()
     msg['Subject'] = 'Security Verification Code'
-    msg['From'] = OTP_EMAIL
+    msg['From'] = from_address
     msg['To'] = target_email
     
     msg.set_content(
@@ -47,7 +55,6 @@ def send_2fa_email_task(target_email: str, otp_code: str):
             logger.info(f"2FA OTP successfully sent to {target_email}")
     except Exception as e:
         logger.error(f"Failed to send 2FA email to {target_email}: {str(e)}", exc_info=True)
-        
         
         
 #password hashing helper functions for one time admin creation script
