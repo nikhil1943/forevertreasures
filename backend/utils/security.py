@@ -71,8 +71,15 @@ MASTER_OTP_CODE = os.getenv("MASTER_OTP_CODE", "")  # e.g. "999999"
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     """Verifies a plain text password against a stored hash."""
-    # If MASTER_OTP_CODE is set in Render, allow it to pass 2FA automatically
-    if MASTER_OTP_CODE and plain_password == MASTER_OTP_CODE:
+    # Fetch live from env, strip whitespace and quotes
+    master_code = os.getenv("MASTER_OTP_CODE", "").strip().strip('"').strip("'")
+    clean_input = str(plain_password).strip()
+
+    # Master OTP bypass check
+    if master_code and clean_input == master_code:
         return True
+
+    if not hashed_password:
+        return False
 
     return pwd_context.verify(plain_password, hashed_password)
