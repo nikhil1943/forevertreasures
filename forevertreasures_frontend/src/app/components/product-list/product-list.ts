@@ -1,9 +1,9 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Category, Product, ProductService } from '../../services/product';
-import { Cart } from '../../services/cart'; // <-- Import CartService
+import { Cart } from '../../services/cart';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -15,8 +15,9 @@ import { RouterLink } from '@angular/router';
 })
 export class ProductList implements OnInit, OnDestroy {
   private productService = inject(ProductService);
-  private cartService = inject(Cart); // <-- Inject CartService
+  private cartService = inject(Cart);
   private sanitizer = inject(DomSanitizer);
+  private platformId = inject(PLATFORM_ID); // <-- Inject PLATFORM_ID
 
   products: Product[] = [];
   categories: Category[] = [];
@@ -29,11 +30,18 @@ export class ProductList implements OnInit, OnDestroy {
   private hoverIntervals: { [productId: number]: ReturnType<typeof setInterval> } = {};
 
   ngOnInit(): void {
-    this.loadCategories();
-    this.loadProducts();
+    // Only execute initial fetching inside browser client
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadCategories();
+      this.loadProducts();
+    } else {
+      this.loading = false;
+    }
   }
 
   loadCategories(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     this.productService.getCategories().subscribe({
       next: (data) => this.categories = data,
       error: (err) => console.error('Failed to load categories', err)
@@ -41,6 +49,8 @@ export class ProductList implements OnInit, OnDestroy {
   }
 
   loadProducts(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+
     this.loading = true;
     this.productService.getProducts(this.searchQuery, this.selectedCategoryId ?? undefined)
       .subscribe({
@@ -68,9 +78,8 @@ export class ProductList implements OnInit, OnDestroy {
     return this.sanitizer.bypassSecurityTrustUrl(url);
   }
 
-  // Quick add method for the product catalog grid
   quickAddToCart(product: Product, event: Event): void {
-    event.stopPropagation(); // Prevents card routerLink from firing on button click
+    event.stopPropagation();
     this.cartService.addToCart(product, 1);
   }
 
