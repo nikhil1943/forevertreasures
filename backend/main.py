@@ -446,19 +446,22 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
 
 @admin_router.get("/products", response_model=List[schemas.ProductResponse])
 def get_admin_products(db: Session = Depends(get_db)):
-    """Fetch all products for Admin management dashboard."""
-    return db.query(models.Product).all()
+    """Fetch all products (including hidden ones) with eager category loading."""
+    return db.query(models.Product).options(joinedload(models.Product.category)).all()
+
 
 @admin_router.post("/products", response_model=schemas.ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_admin_product(payload: schemas.ProductCreate, db: Session = Depends(get_db)):
-    product_data = payload.dict() if hasattr(payload, "dict") else payload.model_dump()
-    if "slug" in product_data and not product_data["slug"] and "title" in product_data:
-        product_data["slug"] = generate_slug(product_data["title"])
+    product_data = payload.model_dump()
+    
     new_product = models.Product(**product_data)
     db.add(new_product)
     db.commit()
     db.refresh(new_product)
-    return new_product
+    
+    # Eagerly fetch category relationship so ProductResponse can serialize category
+    return db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == new_product.id).first()
+
 
 @admin_router.put("/products/{product_id}", response_model=schemas.ProductResponse)
 def update_admin_product(product_id: int, payload: schemas.ProductCreate, db: Session = Depends(get_db)):
@@ -466,13 +469,16 @@ def update_admin_product(product_id: int, payload: schemas.ProductCreate, db: Se
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    product_data = payload.dict(exclude_unset=True) if hasattr(payload, "dict") else payload.model_dump(exclude_unset=True)
+    product_data = payload.model_dump(exclude_unset=True)
     for key, value in product_data.items():
         setattr(product, key, value)
 
     db.commit()
     db.refresh(product)
-    return product
+    
+    # Return updated product with loaded category relationship
+    return db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == product.id).first()
+
 
 @admin_router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_admin_product(product_id: int, db: Session = Depends(get_db)):
@@ -480,11 +486,10 @@ def delete_admin_product(product_id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Soft delete: Hide product without violating order foreign keys
+    # Soft delete to avoid violating order_items foreign key constraints
     product.is_visible = False
     db.commit()
     return None
-
 
 # ==========================================
 # PUBLIC STOREFRONT ENDPOINTS (/api/...)
