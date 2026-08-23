@@ -11,7 +11,7 @@ from fastapi import FastAPI, Depends, HTTPException, Query, status, APIRouter, R
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from pydantic import BaseModel, EmailStr
 
 import models
