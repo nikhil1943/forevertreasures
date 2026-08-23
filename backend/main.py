@@ -384,14 +384,20 @@ def update_order_status(order_id: int, payload: OrderStatusUpdatePayload, db: Se
     db.refresh(order)
     return order
 
-@admin_router.delete("/orders/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_admin_order(order_id: int, db: Session = Depends(get_db)):
-    """Delete an order record permanently from the database."""
-    order = db.query(models.Order).filter(models.Order.id == order_id).first()
-    if not order:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
-    
-    db.delete(order)
+
+@admin_router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_admin_product(product_id: int, db: Session = Depends(get_db)):
+    product = db.query(models.Product).filter(models.Product.id == product_id).first()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    # 1. Unlink from order items so foreign key constraint doesn't crash
+    db.query(models.OrderItem).filter(models.OrderItem.product_id == product_id).update(
+        {"product_id": None}
+    )
+
+    # 2. Hard delete the product record
+    db.delete(product)
     db.commit()
     return None
 
