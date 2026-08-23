@@ -25,7 +25,8 @@ export class AdminComponent implements OnInit {
   categoryName = '';
   categorySlug = '';
 
-  // Product Form Model
+  // Product Form State
+  editingProduct = signal<any | null>(null);
   newProduct = {
     title: '',
     description: '',
@@ -34,7 +35,7 @@ export class AdminComponent implements OnInit {
     category_id: null as number | null
   };
 
-  // Dynamic Image URLs List
+  // Dynamic Image URLs List (Supports HTTP URLs and Base64 Data Strings)
   imageUrls: string[] = [''];
 
   // Order Status Options
@@ -62,6 +63,7 @@ export class AdminComponent implements OnInit {
   }
 
   private resetProductForm(): void {
+    this.editingProduct.set(null);
     this.newProduct = {
       title: '',
       description: '',
@@ -69,7 +71,7 @@ export class AdminComponent implements OnInit {
       stock_quantity: 0,
       category_id: null
     };
-    this.imageUrls = ['']; // Reset to one empty image field
+    this.imageUrls = [''];
     this.errorMessage.set('');
   }
 
@@ -82,12 +84,11 @@ export class AdminComponent implements OnInit {
       .replace(/^-+|-+$/g, '');
   }
 
-  // TrackBy helper for *ngFor over primitive string array
   trackByIndex(index: number): number {
     return index;
   }
 
-  // Dynamic Image URL Inputs
+  // Dynamic Image Input Helpers
   addImageUrlInput(): void {
     this.imageUrls.push('');
   }
@@ -98,6 +99,22 @@ export class AdminComponent implements OnInit {
     } else {
       this.imageUrls[0] = '';
     }
+  }
+
+  // Direct Local Image File Upload (Converts to Base64)
+  onFileSelected(event: Event, index: number): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+
+    const file = input.files[0];
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      // Store Base64 string directly in imageUrls array
+      this.imageUrls[index] = reader.result as string;
+    };
+
+    reader.readAsDataURL(file);
   }
 
   // ==========================================
@@ -184,6 +201,29 @@ export class AdminComponent implements OnInit {
     this.showProductModal.set(true);
   }
 
+  openEditProductModal(product: any): void {
+    this.editingProduct.set(product);
+    this.newProduct = {
+      title: product.title || '',
+      description: product.description || '',
+      price: product.price || null,
+      stock_quantity: product.stock_quantity || 0,
+      category_id: product.category_id || null
+    };
+
+    // Load existing image URLs/base64 strings or default to 1 empty field
+    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
+      this.imageUrls = [...product.images];
+    } else if (product.image_url) {
+      this.imageUrls = [product.image_url];
+    } else {
+      this.imageUrls = [''];
+    }
+
+    this.errorMessage.set('');
+    this.showProductModal.set(true);
+  }
+
   closeProductModal(): void {
     this.showProductModal.set(false);
     this.resetProductForm();
@@ -195,7 +235,6 @@ export class AdminComponent implements OnInit {
       return;
     }
 
-    // Clean up empty image strings
     const cleanedImages = this.imageUrls
       .map(url => url.trim())
       .filter(url => url.length > 0);
@@ -206,16 +245,48 @@ export class AdminComponent implements OnInit {
       price: Number(this.newProduct.price),
       stock_quantity: Number(this.newProduct.stock_quantity) || 0,
       category_id: Number(this.newProduct.category_id),
-      images: cleanedImages // Array of image URLs
+      images: cleanedImages
     };
 
-    this.adminService.createProduct(payload as any).subscribe({
+    const currentProduct = this.editingProduct();
+
+    if (currentProduct) {
+      // PUT API Request for Update
+      this.adminService.updateProduct(currentProduct.id, payload as any).subscribe({
+        next: () => {
+          this.setSuccessMessage('Product updated successfully!');
+          this.closeProductModal();
+          this.adminService.loadProducts();
+        },
+        error: (err) => {
+          this.errorMessage.set(err.error?.detail || 'Failed to update product.');
+        }
+      });
+    } else {
+      // POST API Request for Create
+      this.adminService.createProduct(payload as any).subscribe({
+        next: () => {
+          this.setSuccessMessage('Product created successfully!');
+          this.closeProductModal();
+          this.adminService.loadProducts();
+        },
+        error: (err) => {
+          this.errorMessage.set(err.error?.detail || 'Failed to create product.');
+        }
+      });
+    }
+  }
+
+  deleteProduct(id: number): void {
+    if (!confirm('Are you sure you want to delete this product?')) return;
+
+    this.adminService.deleteProduct(id).subscribe({
       next: () => {
-        this.setSuccessMessage('Product created successfully!');
-        this.closeProductModal();
+        this.setSuccessMessage('Product deleted successfully!');
+        this.adminService.loadProducts();
       },
       error: (err) => {
-        this.errorMessage.set(err.error?.detail || 'Failed to create product.');
+        this.errorMessage.set(err.error?.detail || 'Failed to delete product.');
       }
     });
   }

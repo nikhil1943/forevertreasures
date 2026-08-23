@@ -34,6 +34,7 @@
           <th>Price (₹)</th>
           <th>Stock</th>
           <th>Quick Update</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -52,6 +53,12 @@
           </td>
           <td>
             <input type="number" [value]="item.stock_quantity" min="0" (change)="onStockChange(item.id, $event)" class="stock-input" />
+          </td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-sm btn-edit" (click)="openEditProductModal(item)">Edit</button>
+              <button class="btn-sm btn-delete" (click)="deleteProduct(item.id)">Delete</button>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -141,10 +148,10 @@
   </div>
 </div>
 
-<!-- Product Modal -->
+<!-- Product Modal (Add & Edit) -->
 <div class="modal-backdrop" *ngIf="showProductModal()">
   <div class="modal-card">
-    <h2>Create New Product</h2>
+    <h2>{{ editingProduct() ? 'Edit Product' : 'Create New Product' }}</h2>
     
     <div class="form-group">
       <label>Product Name *</label>
@@ -156,33 +163,45 @@
       <textarea [(ngModel)]="newProduct.description" rows="3" placeholder="Enter product description..."></textarea>
     </div>
 
-    <!-- Dynamic Image URLs List -->
+    <!-- Images Upload / URL Selector -->
     <div class="form-group">
-      <label>Product Image URLs (For Slideshow)</label>
+      <label>Product Images</label>
       <div 
         *ngFor="let url of imageUrls; let i = index; trackBy: trackByIndex" 
-        class="image-url-row"
+        class="image-upload-box"
       >
-        <input 
-          type="url" 
-          [(ngModel)]="imageUrls[i]" 
-          placeholder="https://example.com/image.jpg" 
-        />
-        <button 
-          type="button" 
-          class="btn-sm btn-delete" 
-          (click)="removeImageUrlInput(i)" 
-          title="Remove Image"
-        >
-          ✕
-        </button>
+        <div class="image-url-row">
+          <input 
+            type="text" 
+            [(ngModel)]="imageUrls[i]" 
+            placeholder="Paste URL or select image below..." 
+          />
+          <button 
+            type="button" 
+            class="btn-sm btn-delete" 
+            (click)="removeImageUrlInput(i)" 
+            title="Remove Field"
+          >
+            ✕
+          </button>
+        </div>
+
+        <!-- Direct File Input -->
+        <div class="file-picker-row">
+          <label class="file-input-label">
+            📁 Choose Local File
+            <input type="file" accept="image/*" (change)="onFileSelected($event, i)" class="hidden-file-input" />
+          </label>
+          <img *ngIf="imageUrls[i]" [src]="imageUrls[i]" alt="Preview" class="image-preview-thumb" />
+        </div>
       </div>
+
       <button 
         type="button" 
         class="btn-secondary btn-add-image" 
         (click)="addImageUrlInput()"
       >
-        + Add Another Image URL
+        + Add Another Image
       </button>
     </div>
 
@@ -208,7 +227,9 @@
 
     <div class="modal-actions">
       <button class="btn-secondary" (click)="closeProductModal()">Cancel</button>
-      <button class="btn-primary" (click)="submitProduct()">Create Product</button>
+      <button class="btn-primary" (click)="submitProduct()">
+        {{ editingProduct() ? 'Update Product' : 'Create Product' }}
+      </button>
     </div>
   </div>
 </div>

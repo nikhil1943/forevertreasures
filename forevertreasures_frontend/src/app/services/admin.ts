@@ -12,11 +12,13 @@ export interface Category {
 export interface AdminProduct {
   id: number;
   title: string;
-  description: string;
+  description?: string;
   price: number;
   stock_quantity: number;
   category_id: number;
-  is_visible: boolean;
+  is_visible?: boolean;
+  images?: string[];
+  image_url?: string;
 }
 
 export interface AdminOrder {
@@ -26,6 +28,15 @@ export interface AdminOrder {
   total: number;
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   date: string;
+}
+
+export interface ProductPayload {
+  title: string;
+  description?: string;
+  price: number;
+  stock_quantity: number;
+  category_id: number;
+  images?: string[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -50,7 +61,7 @@ export class AdminService {
 
   createCategory(payload: { name: string; slug?: string }): Observable<Category> {
     return this.http.post<Category>(`${this.apiUrl}/categories`, payload).pipe(
-      tap(() => this.loadCategories()) // Auto-refresh signal list on success
+      tap(() => this.loadCategories())
     );
   }
 
@@ -76,14 +87,20 @@ export class AdminService {
     });
   }
 
-  createProduct(payload: {
-    title: string;
-    description: string;
-    price: number;
-    stock_quantity: number;
-    category_id: number;
-  }): Observable<AdminProduct> {
+  createProduct(payload: ProductPayload): Observable<AdminProduct> {
     return this.http.post<AdminProduct>(`${this.apiUrl}/products`, payload).pipe(
+      tap(() => this.loadProducts())
+    );
+  }
+
+  updateProduct(id: number, payload: ProductPayload): Observable<AdminProduct> {
+    return this.http.put<AdminProduct>(`${this.apiUrl}/products/${id}`, payload).pipe(
+      tap(() => this.loadProducts())
+    );
+  }
+
+  deleteProduct(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/products/${id}`).pipe(
       tap(() => this.loadProducts())
     );
   }

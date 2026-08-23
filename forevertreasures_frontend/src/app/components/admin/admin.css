@@ -108,7 +108,7 @@
   color: #fff;
 }
 
-/* Action Buttons for Table */
+/* Table Action Buttons */
 .action-buttons {
   display: flex;
   gap: 0.5rem;
@@ -289,7 +289,15 @@ code {
   border-color: #d4af37;
 }
 
-/* Dynamic Image URL Row Styling */
+/* Image Upload Component Styles */
+.image-upload-box {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  padding: 0.8rem;
+  border-radius: 6px;
+  margin-bottom: 0.75rem;
+}
+
 .image-url-row {
   display: flex;
   gap: 0.5rem;
@@ -299,6 +307,43 @@ code {
 
 .image-url-row input {
   flex: 1;
+}
+
+.file-picker-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+}
+
+.file-input-label {
+  display: inline-block;
+  background: rgba(212, 175, 55, 0.15);
+  color: #d4af37;
+  border: 1px solid rgba(212, 175, 55, 0.4);
+  padding: 0.4rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+}
+
+.file-input-label:hover {
+  background: #d4af37;
+  color: #000000;
+}
+
+.hidden-file-input {
+  display: none !important;
+}
+
+.image-preview-thumb {
+  width: 42px;
+  height: 42px;
+  object-fit: cover;
+  border-radius: 4px;
+  border: 1px solid #d4af37;
 }
 
 .btn-add-image {
