@@ -1,7 +1,8 @@
 from datetime import datetime
-from sqlalchemy import ARRAY, Column, Integer, String, Float, Boolean, ForeignKey, Text, DateTime
+from sqlalchemy import ARRAY, Column, Integer, String, Float, Boolean, ForeignKey, Text, DateTime, JSON
 from sqlalchemy.orm import relationship
 from database import Base
+
 
 
 class User(Base):
@@ -88,13 +89,15 @@ class Product(Base):
     price = Column(Float, nullable=False)
     stock_quantity = Column(Integer, default=0)
     
-    # ARRAY of strings (PostgreSQL)
-    image_urls = Column(ARRAY(String), default=list) 
+    # Changed String to Text for large Base64 character strings
+    image_urls = Column(ARRAY(Text), default=list) 
     
     is_visible = Column(Boolean, default=True)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
 
     category = relationship("Category", back_populates="products")
+    
+    
     
     
 # models.py
@@ -109,3 +112,7 @@ class RefreshToken(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     token = Column(String, unique=True, index=True, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    
+    
+    
+    

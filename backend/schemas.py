@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, AliasChoices
 from typing import Optional, List
 
 
@@ -22,9 +22,15 @@ class ProductBase(BaseModel):
     description: Optional[str] = None
     price: float
     stock_quantity: int = 0
-    image_urls: List[str] = []
+    # Accepts 'images' from Angular payloads OR 'image_urls' from SQLAlchemy models
+    image_urls: List[str] = Field(
+        default_factory=list,
+        validation_alias=AliasChoices("images", "image_urls")
+    )
     is_visible: bool = True
     category_id: int
+
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 class ProductCreate(ProductBase):
     pass
@@ -33,7 +39,7 @@ class ProductResponse(ProductBase):
     id: int
     category: CategoryResponse
 
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
 
 # --- Address Schemas ---
@@ -94,8 +100,9 @@ class OrderItemSchema(BaseModel):
 class CheckoutRequest(BaseModel):
     customer_name: str
     email: EmailStr
-    address: str
-    city: str
+    address_id: Optional[int] = None  # Saved address reference
+    address: Optional[str] = None     # Manual inline address line
+    city: Optional[str] = None        # Manual inline city
     items: List[OrderItemSchema]
     total_amount: float
     user_id: Optional[int] = None
@@ -108,19 +115,9 @@ class OrderResponse(BaseModel):
     user_id: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
-    
-    
-class CheckoutRequest(BaseModel):
-    customer_name: str
-    email: EmailStr
-    address_id: Optional[int] = None  # Option A: ID of a saved address
-    address: Optional[str] = None     # Option B: Manual inline address line
-    city: Optional[str] = None        # Option B: Manual inline city
-    items: List[OrderItemSchema]
-    total_amount: float
-    user_id: Optional[int] = None
-    
 
+
+# --- 2FA & Auth Verification Schemas ---
 class Verify2FARequest(BaseModel):
     email: EmailStr
     code: str
@@ -130,12 +127,12 @@ class LoginResponse(BaseModel):
     access_token: str | None = None
     token_type: str | None = "bearer"
     message: str | None = None
-    
 
 
+# --- Payment Gateway Schemas ---
 class CreatePaymentIntentRequest(BaseModel):
     amount: int  # Amount in smallest currency unit (e.g., cents or paise)
-    currency: str = "usd"  # "usd", "inr", "eur", etc.
+    currency: str = "usd"
     order_id: int
 
 class PaymentIntentResponse(BaseModel):

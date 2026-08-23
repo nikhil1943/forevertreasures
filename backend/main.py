@@ -480,7 +480,8 @@ def delete_admin_product(product_id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    db.delete(product)
+    # Soft delete: Hide product without violating order foreign keys
+    product.is_visible = False
     db.commit()
     return None
 
