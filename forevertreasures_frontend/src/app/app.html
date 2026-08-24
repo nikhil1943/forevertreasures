@@ -1,17 +1,14 @@
 <header class="navbar">
   <div class="nav-container">
     <a routerLink="/" (click)="closeMobileMenu()" class="gold-shimmer-logo">
-      <!-- Logo Image Icon -->
       <img src="assets/logo_navbar.png" alt="Forever Treasures Logo" class="logo-img" />
       
-      <!-- Text Block -->
       <div class="logo-text">
         <span class="brand-title">Forever Treasures</span>
         <span class="tagline">Gifting Life's Greatest Milestones</span>
       </div>
     </a>
     
-    <!-- Animated Hamburger Toggle -->
     <button 
       class="hamburger-btn" 
       [class.open]="isMobileMenuOpen()" 
@@ -22,7 +19,6 @@
       <span class="bar"></span>
     </button>
 
-    <!-- Nav Links with Touch Swipe Listeners -->
     <nav 
       class="nav-links" 
       [class.mobile-open]="isMobileMenuOpen()"
@@ -34,15 +30,12 @@
       <a routerLink="/" (click)="closeMobileMenu()" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
       <a routerLink="/about-us" (click)="closeMobileMenu()" routerLinkActive="active">About Us</a>
       
-      <!-- Shop Now Dropdown Container -->
       <div class="nav-item-dropdown">
         <a routerLink="/products" (click)="closeMobileMenu()" routerLinkActive="active" class="dropdown-trigger">
           Shop Now <span class="chevron">▾</span>
         </a>
 
-        <!-- Hover Mega Menu -->
         <div class="mega-menu">
-          <!-- Left Column: Dynamic Categories -->
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Categories</h4>
             <a (click)="filterByCategory(undefined)">All Products</a>
@@ -54,7 +47,6 @@
             </a>
           </div>
 
-          <!-- Right Column: Price Ranges -->
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Price</h4>
             <a (click)="filterByPrice(0, 500)">Under Rs. 500</a>
@@ -63,6 +55,7 @@
             <a (click)="filterByPrice(2100, 3500)">Under Rs. 3,500</a>
             <a (click)="filterByPrice(3500, 5000)">Under Rs. 5,000</a>
           </div>
+        </div>
       </div>
 
       <a routerLink="/contact-us" (click)="closeMobileMenu()" routerLinkActive="active">Contact Us</a>

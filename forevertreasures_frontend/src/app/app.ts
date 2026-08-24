@@ -36,14 +36,12 @@ export class App implements OnInit {
     });
   }
 
-  // Navigates and sets Category Filter without URL query parameters
   filterByCategory(categoryId?: number): void {
     this.closeMobileMenu();
     this.productService.setCategoryFilter(categoryId);
     this.router.navigate(['/products']);
   }
 
-  // Navigates and sets Price Filter without URL query parameters
   filterByPrice(minPrice?: number, maxPrice?: number): void {
     this.closeMobileMenu();
     this.productService.setPriceFilter(minPrice, maxPrice);
