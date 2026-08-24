@@ -1,5 +1,5 @@
-import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, effect, inject, OnDestroy, OnInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Category, Product, ProductService } from '../../services/product';
@@ -23,7 +23,6 @@ export class ProductList implements OnInit, OnDestroy {
   private productService = inject(ProductService);
   private cartService = inject(Cart);
   private sanitizer = inject(DomSanitizer);
-  private platformId = inject(PLATFORM_ID);
 
   products: Product[] = [];
   categories: Category[] = [];
@@ -47,27 +46,24 @@ export class ProductList implements OnInit, OnDestroy {
   constructor() {
     effect(() => {
       const filters = this.productService.activeFilters();
-      if (isPlatformBrowser(this.platformId)) {
-        this.selectedCategoryId = filters.categoryId ?? null;
-        this.searchQuery = filters.search || '';
+      this.selectedCategoryId = filters.categoryId ?? null;
+      this.searchQuery = filters.search || '';
 
-        if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
-          const min = filters.minPrice ?? 0;
-          const max = filters.maxPrice ?? null;
-          this.selectedPriceRange = this.priceRanges.find(r => r.min === min && r.max === max) || null;
-        } else {
-          this.selectedPriceRange = null;
-        }
-
-        this.fetchProducts();
+      if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+        const min = filters.minPrice ?? 0;
+        const max = filters.maxPrice ?? null;
+        this.selectedPriceRange = this.priceRanges.find(r => r.min === min && r.max === max) || null;
+      } else {
+        this.selectedPriceRange = null;
       }
+
+      this.fetchProducts();
     });
   }
 
   ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.loadCategories();
-    }
+    this.loadCategories();
+    this.fetchProducts();
   }
 
   loadCategories(): void {

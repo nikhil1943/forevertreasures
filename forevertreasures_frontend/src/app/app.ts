@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal, PLATFORM_ID } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Cart } from './services/cart';
 import { AuthService } from './services/auth';
@@ -16,7 +16,6 @@ export class App implements OnInit {
   private cartService = inject(Cart);
   private router = inject(Router);
   private productService = inject(ProductService);
-  private platformId = inject(PLATFORM_ID);
   public authService = inject(AuthService);
 
   totalCount = this.cartService.totalCount;
@@ -27,9 +26,7 @@ export class App implements OnInit {
   private readonly minSwipeDistance = 50;
 
   ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.loadCategories();
-    }
+    this.loadCategories();
   }
 
   loadCategories(): void {
