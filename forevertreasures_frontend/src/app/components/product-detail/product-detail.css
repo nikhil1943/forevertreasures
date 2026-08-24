@@ -216,13 +216,16 @@
   color: var(--bg-obsidian, #1a1a1a);
   background: #ffffff;
   outline: none;
+  -webkit-appearance: textfield;
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 /* Remove HTML5 Number Spinners */
 .qty-input::-webkit-outer-spin-button,
 .qty-input::-webkit-inner-spin-button {
   -webkit-appearance: none;
+  appearance: none;
   margin: 0;
 }
 
