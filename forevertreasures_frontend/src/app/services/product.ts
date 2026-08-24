@@ -13,12 +13,12 @@ export interface Product {
   id: number;
   title: string;
   description: string;
-  price: number;
+  price: number | string;
   stock_quantity: number;
   image_urls: string[];
   is_visible: boolean;
-  category_id: number;
-  category: Category;
+  category_id?: number;
+  category?: Category;
 }
 
 export interface ProductFilters {
@@ -63,17 +63,17 @@ export class ProductService {
     maxPrice?: number,
     page: number = 1,
     limit: number = 12
-  ): Observable<Product[]> {
-    let params = new HttpParams()
-      .set('page', page.toString())
-      .set('limit', limit.toString());
+  ): Observable<any> {
+    let params = new HttpParams();
 
+    if (page) params = params.set('page', page.toString());
+    if (limit) params = params.set('limit', limit.toString());
     if (search && search.trim() !== '') params = params.set('search', search.trim());
     if (categoryId !== undefined && categoryId !== null) params = params.set('category_id', categoryId.toString());
     if (minPrice !== undefined && minPrice !== null) params = params.set('min_price', minPrice.toString());
     if (maxPrice !== undefined && maxPrice !== null) params = params.set('max_price', maxPrice.toString());
 
-    return this.http.get<Product[]>(`${this.apiUrl}/products`, { params }).pipe(
+    return this.http.get<any>(`${this.apiUrl}/products`, { params }).pipe(
       tap(data => {
         if (!search && categoryId === undefined && minPrice === undefined && maxPrice === undefined && page === 1) {
           this.productsCache.set(data);

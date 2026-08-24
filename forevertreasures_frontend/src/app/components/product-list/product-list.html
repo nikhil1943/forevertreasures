@@ -31,10 +31,10 @@
       <option *ngFor="let range of priceRanges" [ngValue]="range">
         {{ range.label }}
       </option>
-    </select> -->
-  </div>
+    </select>
+  </div> -->
 
-  <!-- Skeleton Loading Indicator -->
+  <!-- Skeleton Loading State -->
   <div *ngIf="loading" class="product-grid">
     <div *ngFor="let item of [1, 2, 3, 4, 5, 6, 7, 8]" class="product-card skeleton-card">
       <div class="skeleton-image skeleton-pulse"></div>
@@ -47,7 +47,7 @@
   </div>
 
   <!-- Product Grid -->
-  <div *ngIf="!loading" class="product-grid">
+  <div *ngIf="!loading && products.length > 0" class="product-grid">
     <div *ngFor="let product of products" class="product-card">
       
       <!-- Card Body -->
@@ -88,7 +88,7 @@
 
         <!-- Footer Row with Price and Single Add to Cart Button -->
         <div class="card-footer">
-          <span class="product-price">Rs. {{ product.price.toFixed(2) }}</span>
+          <span class="product-price">Rs. {{ product.price | number:'1.2-2' }}</span>
           
           <button 
             class="quick-add-btn" 

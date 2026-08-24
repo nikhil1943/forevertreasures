@@ -34,7 +34,6 @@ export class ProductList implements OnInit, OnDestroy {
   searchQuery: string = '';
   loading: boolean = true;
 
-  // Pagination state
   currentPage: number = 1;
   pageSize: number = 12;
 
@@ -61,12 +60,7 @@ export class ProductList implements OnInit, OnDestroy {
         if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
           const min = filters.minPrice ?? 0;
           const max = filters.maxPrice ?? null;
-          
-          this.selectedPriceRange = this.priceRanges.find(r => r.min === min && r.max === max) || {
-            label: 'Selected Range',
-            min: min,
-            max: max
-          };
+          this.selectedPriceRange = this.priceRanges.find(r => r.min === min && r.max === max) || null;
         } else {
           this.selectedPriceRange = null;
         }
@@ -79,16 +73,17 @@ export class ProductList implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.loadCategories();
+      this.loadProducts();
     } else {
       this.loading = false;
     }
   }
 
   loadCategories(): void {
-    if (!isPlatformBrowser(this.platformId)) return;
-
     this.productService.getCategories().subscribe({
-      next: (data) => (this.categories = data),
+      next: (data: any) => {
+        this.categories = Array.isArray(data) ? data : (data?.categories || []);
+      },
       error: (err) => console.error('Failed to load categories', err),
     });
   }
@@ -104,13 +99,27 @@ export class ProductList implements OnInit, OnDestroy {
     this.productService
       .getProducts(this.searchQuery, this.selectedCategoryId ?? undefined, min, max, this.currentPage, this.pageSize)
       .subscribe({
-        next: (data) => {
-          this.products = data;
-          this.allProducts = data;
+        next: (data: any) => {
+          // Safely extract product array regardless of backend payload structure
+          let extractedProducts: Product[] = [];
+
+          if (Array.isArray(data)) {
+            extractedProducts = data;
+          } else if (data && Array.isArray(data.products)) {
+            extractedProducts = data.products;
+          } else if (data && Array.isArray(data.data)) {
+            extractedProducts = data.data;
+          } else if (data && Array.isArray(data.items)) {
+            extractedProducts = data.items;
+          }
+
+          this.products = extractedProducts;
+          this.allProducts = extractedProducts;
           this.loading = false;
         },
         error: (err) => {
           console.error('Failed to load products', err);
+          this.products = [];
           this.loading = false;
         },
       });
