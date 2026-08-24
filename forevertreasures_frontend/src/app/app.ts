@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Cart } from './services/cart';
 import { AuthService } from './services/auth';
@@ -16,6 +16,7 @@ export class App implements OnInit {
   private cartService = inject(Cart);
   private router = inject(Router);
   private productService = inject(ProductService);
+  private platformId = inject(PLATFORM_ID);
   public authService = inject(AuthService);
 
   totalCount = this.cartService.totalCount;
@@ -26,12 +27,18 @@ export class App implements OnInit {
   private readonly minSwipeDistance = 50;
 
   ngOnInit(): void {
-    this.loadCategories();
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadCategories();
+    }
   }
 
   loadCategories(): void {
     this.productService.getCategories().subscribe({
-      next: (data) => this.categories.set(data),
+      next: (data) => {
+        // Defensive check to ensure data is an array
+        const categoryList = Array.isArray(data) ? data : (data as any)?.categories || [];
+        this.categories.set(categoryList);
+      },
       error: (err) => console.error('Failed to load nav categories:', err)
     });
   }
