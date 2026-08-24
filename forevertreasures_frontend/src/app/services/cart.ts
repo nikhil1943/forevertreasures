@@ -40,8 +40,9 @@ export class Cart {
     this.cartItemsSignal().reduce((sum, item) => sum + item.quantity, 0)
   );
 
+  // Cast price to Number to safely support string or numeric DB price values
   readonly totalPrice = computed(() => 
-    this.cartItemsSignal().reduce((sum, item) => sum + (item.product.price * item.quantity), 0)
+    this.cartItemsSignal().reduce((sum, item) => sum + (Number(item.product.price) * item.quantity), 0)
   );
 
   addToCart(product: Product, quantity: number = 1): void {
