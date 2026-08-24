@@ -36,24 +36,24 @@
         </a>
 
         <div class="mega-menu">
+          <!-- Left Column: Dynamic Categories -->
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Categories</h4>
-            <a (click)="filterByCategory(undefined)">All Products</a>
+            <a style="cursor: pointer;" (click)="filterByCategory(undefined)">All Products</a>
             
-            <a 
-              *ngFor="let category of categories()" 
-              (click)="filterByCategory(category.id)">
+            <a *ngFor="let category of categories()" style="cursor: pointer;" (click)="filterByCategory(category.id)">
               {{ category.name }}
             </a>
           </div>
 
+          <!-- Right Column: Price Ranges -->
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Price</h4>
-            <a (click)="filterByPrice(0, 500)">Under Rs. 500</a>
-            <a (click)="filterByPrice(500, 1100)">Under Rs. 1,100</a>
-            <a (click)="filterByPrice(1100, 2100)">Under Rs. 2,100</a>
-            <a (click)="filterByPrice(2100, 3500)">Under Rs. 3,500</a>
-            <a (click)="filterByPrice(3500, 5000)">Under Rs. 5,000</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 500)">Under Rs. 500</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 1100)">Under Rs. 1,100</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 2100)">Under Rs. 2,100</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 3500)">Under Rs. 3,500</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 5000)">Under Rs. 5,000</a>
           </div>
         </div>
       </div>
