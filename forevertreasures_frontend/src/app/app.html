@@ -45,7 +45,7 @@
       <ng-container *ngIf="authService.isLoggedIn(); else showLogin">
         <div class="user-session">
           <span class="role-badge" [class.admin]="authService.isAdmin()">
-            {{ authService.isAdmin() ? 'Seller' : (authService.currentUser()?.fullName || authService.getUserName() || 'User') }}
+            {{ currentUser()?.fullName || 'User' }}
           </span>
           <button (click)="handleLogout()" class="auth-btn logout-btn">Logout</button>
         </div>
