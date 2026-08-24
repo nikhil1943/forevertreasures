@@ -33,7 +33,35 @@
 
       <a routerLink="/" (click)="closeMobileMenu()" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
       <a routerLink="/about-us" (click)="closeMobileMenu()" routerLinkActive="active">About Us</a>
-      <a routerLink="/products" (click)="closeMobileMenu()" routerLinkActive="active">Shop Now</a>
+      
+      <!-- Shop Now Dropdown Container -->
+      <div class="nav-item-dropdown">
+        <a routerLink="/products" (click)="closeMobileMenu()" routerLinkActive="active" class="dropdown-trigger">
+          Shop Now <span class="chevron">▾</span>
+        </a>
+
+        <!-- Hover Mega Menu -->
+        <div class="mega-menu">
+          <!-- Left Column: Categories -->
+          <div class="mega-menu-column">
+            <h4 class="menu-heading">Shop by Categories</h4>
+            <a [routerLink]="['/products']" [queryParams]="{ categoryId: null }" (click)="closeMobileMenu()">All Products</a>
+            <a [routerLink]="['/products']" [queryParams]="{ categoryId: 1 }" (click)="closeMobileMenu()">Jewelry</a>
+            <a [routerLink]="['/products']" [queryParams]="{ categoryId: 2 }" (click)="closeMobileMenu()">Keepsakes</a>
+            <a [routerLink]="['/products']" [queryParams]="{ categoryId: 3 }" (click)="closeMobileMenu()">Personalized Gifts</a>
+          </div>
+
+          <!-- Right Column: Price Ranges -->
+          <div class="mega-menu-column">
+            <h4 class="menu-heading">Shop by Price</h4>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 0, maxPrice: 1000 }" (click)="closeMobileMenu()">Under Rs. 1,000</a>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 1000, maxPrice: 5000 }" (click)="closeMobileMenu()">Rs. 1,000 - Rs. 5,000</a>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 5000, maxPrice: 15000 }" (click)="closeMobileMenu()">Rs. 5,000 - Rs. 15,000</a>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 15000 }" (click)="closeMobileMenu()">Above Rs. 15,000</a>
+          </div>
+        </div>
+      </div>
+
       <a routerLink="/contact-us" (click)="closeMobileMenu()" routerLinkActive="active">Contact Us</a>
       
       <a *ngIf="authService.isAdmin()" routerLink="/admin" (click)="closeMobileMenu()" routerLinkActive="active" class="admin-nav-link">

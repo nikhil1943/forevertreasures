@@ -535,13 +535,28 @@ def get_categories(db: Session = Depends(get_db)):
     return db.query(models.Category).all()
 
 @app.get("/api/products", response_model=List[schemas.ProductResponse])
-def get_products(search: Optional[str] = Query(None), category_id: Optional[int] = Query(None), db: Session = Depends(get_db)):
-    """Public catalog endpoint for product list/search page."""
+def get_products(
+    search: Optional[str] = Query(None),
+    category_id: Optional[int] = Query(None),
+    min_price: Optional[float] = Query(None),
+    max_price: Optional[float] = Query(None),
+    db: Session = Depends(get_db)
+):
+    """Public catalog endpoint for product list/search page with price filtering."""
     query = db.query(models.Product).filter(models.Product.is_visible == True)
+
     if search:
         query = query.filter(models.Product.title.ilike(f"%{search}%"))
+        
     if category_id:
         query = query.filter(models.Product.category_id == category_id)
+
+    if min_price is not None:
+        query = query.filter(models.Product.price >= min_price)
+
+    if max_price is not None:
+        query = query.filter(models.Product.price <= max_price)
+
     return query.all()
 
 @app.get("/api/products/{product_id}", response_model=schemas.ProductResponse)

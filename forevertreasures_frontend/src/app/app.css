@@ -20,7 +20,7 @@
 .nav-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0.75rem 1.5rem; /* Slightly reduced top/bottom padding */
+  padding: 0.75rem 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -32,7 +32,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
-  flex-shrink: 0; /* Prevents logo section from expanding or shrinking */
+  flex-shrink: 0;
   text-decoration: none;
   z-index: 10001;
   cursor: pointer;
@@ -84,7 +84,7 @@
 
 .nav-links a,
 .cart-link {
-  white-space: nowrap; /* Stops multi-word links from breaking into 2 lines */
+  white-space: nowrap;
   cursor: pointer;
   text-decoration: none;
   position: relative;
@@ -105,6 +105,99 @@
 .nav-links a.active {
   color: #f3e5ab;
   transform: translateY(-1px);
+}
+
+/* Shop Now Dropdown Container */
+.nav-item-dropdown {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+}
+
+.dropdown-trigger .chevron {
+  font-size: 0.75rem;
+  margin-left: 0.25rem;
+  display: inline-block;
+  transition: transform 0.25s ease;
+}
+
+.nav-item-dropdown:hover .chevron {
+  transform: rotate(180deg);
+}
+
+/* Mega Menu Container */
+.mega-menu {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(12px);
+  width: 450px;
+  background: rgba(6, 6, 6, 0.96);
+  backdrop-filter: blur(28px) saturate(200%);
+  -webkit-backdrop-filter: blur(28px) saturate(200%);
+  border: 1px solid rgba(212, 175, 55, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  padding: 1.5rem;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.8rem;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s ease;
+  z-index: 10002;
+}
+
+/* Hover bridge buffer preventing menu closure on mouse transition */
+.mega-menu::before {
+  content: '';
+  position: absolute;
+  top: -16px;
+  left: 0;
+  width: 100%;
+  height: 16px;
+}
+
+.nav-item-dropdown:hover .mega-menu {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Mega Menu Columns */
+.mega-menu-column {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.menu-heading {
+  font-family: 'Cinzel', serif;
+  color: #d4af37;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin: 0 0 0.5rem 0;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+.mega-menu-column a {
+  color: #cbd5e1;
+  font-size: 0.825rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0.5px;
+  transition: color 0.2s ease, transform 0.2s ease;
+}
+
+.mega-menu-column a:hover {
+  color: #f3e5ab;
+  transform: translateX(4px);
 }
 
 /* Seller Portal Link */
@@ -277,6 +370,29 @@
   .nav-links a {
     font-size: 1.1rem;
     letter-spacing: 2px;
+  }
+
+  /* Inline display for mobile menu layout */
+  .nav-item-dropdown {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .mega-menu {
+    position: static;
+    transform: none;
+    width: 100%;
+    max-width: 320px;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+    display: none;
+    padding: 0.5rem 0;
+  }
+
+  .nav-item-dropdown:hover .mega-menu {
+    display: grid;
+    transform: none;
   }
 
   .user-session {

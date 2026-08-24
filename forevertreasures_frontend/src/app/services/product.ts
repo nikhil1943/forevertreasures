@@ -4,27 +4,23 @@ import { Observable } from 'rxjs';
 import { environment } from '../../environments/prod/environment';
 
 // Data Models
-// Add the Category interface
 export interface Category {
   id: number;
   name: string;
   slug: string;
 }
 
-// Update the Product interface
 export interface Product {
   id: number;
   title: string;
   description: string;
   price: number;
   stock_quantity: number;
-  image_urls: string[]; // <-- Updated to array
+  image_urls: string[];
   is_visible: boolean;
   category_id: number;
-  category: Category;   // <-- Now TypeScript knows category has a .name property!
+  category: Category;
 }
-
-
 
 @Injectable({
   providedIn: 'root'
@@ -34,9 +30,14 @@ export class ProductService {
   private apiUrl = environment.apiUrl;
 
   /**
-   * Fetch all visible products with optional title search and category filtering
+   * Fetch all visible products with optional search, category, and price range parameters
    */
-  getProducts(search?: string, categoryId?: number): Observable<Product[]> {
+  getProducts(
+    search?: string,
+    categoryId?: number,
+    minPrice?: number,
+    maxPrice?: number
+  ): Observable<Product[]> {
     let params = new HttpParams();
 
     if (search && search.trim() !== '') {
@@ -45,6 +46,14 @@ export class ProductService {
 
     if (categoryId !== undefined && categoryId !== null) {
       params = params.set('category_id', categoryId.toString());
+    }
+
+    if (minPrice !== undefined && minPrice !== null) {
+      params = params.set('min_price', minPrice.toString());
+    }
+
+    if (maxPrice !== undefined && maxPrice !== null) {
+      params = params.set('max_price', maxPrice.toString());
     }
 
     return this.http.get<Product[]>(`${this.apiUrl}/products`, { params });

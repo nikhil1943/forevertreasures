@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Category, Product, ProductService } from '../../services/product';
 import { Cart } from '../../services/cart';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 
 export interface PriceRange {
   label: string;
@@ -24,6 +24,7 @@ export class ProductList implements OnInit, OnDestroy {
   private cartService = inject(Cart);
   private sanitizer = inject(DomSanitizer);
   private platformId = inject(PLATFORM_ID);
+  private route = inject(ActivatedRoute);
 
   allProducts: Product[] = []; // Stores complete fetched list
   products: Product[] = [];    // Stores filtered list to render
@@ -34,7 +35,7 @@ export class ProductList implements OnInit, OnDestroy {
   searchQuery: string = '';
   loading: boolean = true;
 
-  // Custom price ranges (Modify values here as needed)
+  // Custom price ranges
   priceRanges: PriceRange[] = [
     { label: 'Under Rs. 1,000', min: 0, max: 1000 },
     { label: 'Rs. 1,000 - Rs. 5,000', min: 1000, max: 5000 },
@@ -48,7 +49,28 @@ export class ProductList implements OnInit, OnDestroy {
   ngOnInit(): void {
     if (isPlatformBrowser(this.platformId)) {
       this.loadCategories();
-      this.loadProducts();
+      
+      // Listen for Query Params updates from the Navbar Mega Menu
+      this.route.queryParams.subscribe((params) => {
+        if (params['categoryId'] !== undefined) {
+          this.selectedCategoryId = params['categoryId'] ? Number(params['categoryId']) : null;
+        }
+
+        const min = params['minPrice'] !== undefined ? Number(params['minPrice']) : null;
+        const max = params['maxPrice'] !== undefined ? Number(params['maxPrice']) : null;
+
+        if (min !== null || max !== null) {
+          this.selectedPriceRange = {
+            label: 'Navbar Selected Range',
+            min: min ?? 0,
+            max: max,
+          };
+        } else {
+          this.selectedPriceRange = null;
+        }
+
+        this.loadProducts();
+      });
     } else {
       this.loading = false;
     }
@@ -58,8 +80,8 @@ export class ProductList implements OnInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
 
     this.productService.getCategories().subscribe({
-      next: (data) => this.categories = data,
-      error: (err) => console.error('Failed to load categories', err)
+      next: (data) => (this.categories = data),
+      error: (err) => console.error('Failed to load categories', err),
     });
   }
 
@@ -67,17 +89,21 @@ export class ProductList implements OnInit, OnDestroy {
     if (!isPlatformBrowser(this.platformId)) return;
 
     this.loading = true;
-    this.productService.getProducts(this.searchQuery, this.selectedCategoryId ?? undefined)
+
+    const min = this.selectedPriceRange?.min ?? undefined;
+    const max = this.selectedPriceRange?.max ?? undefined;
+
+    this.productService
+      .getProducts(this.searchQuery, this.selectedCategoryId ?? undefined, min, max)
       .subscribe({
         next: (data) => {
-          this.allProducts = data;
-          this.applyPriceFilter();
+          this.products = data;
           this.loading = false;
         },
         error: (err) => {
           console.error('Failed to load products', err);
           this.loading = false;
-        }
+        },
       });
   }
 
@@ -88,7 +114,7 @@ export class ProductList implements OnInit, OnDestroy {
     }
 
     const { min, max } = this.selectedPriceRange;
-    this.products = this.allProducts.filter(product => {
+    this.products = this.allProducts.filter((product) => {
       const minMatch = product.price >= min;
       const maxMatch = max === null || product.price <= max;
       return minMatch && maxMatch;
@@ -118,7 +144,7 @@ export class ProductList implements OnInit, OnDestroy {
 
   startSlideshow(product: Product): void {
     if (!product.image_urls || product.image_urls.length <= 1) return;
-    
+
     if (this.hoverIntervals[product.id]) {
       clearInterval(this.hoverIntervals[product.id]);
     }
@@ -126,10 +152,10 @@ export class ProductList implements OnInit, OnDestroy {
     this.hoverIntervals[product.id] = setInterval(() => {
       const currentIndex = this.activeImageMap[product.id] || 0;
       const nextIndex = (currentIndex + 1) % product.image_urls.length;
-      
+
       this.activeImageMap = {
         ...this.activeImageMap,
-        [product.id]: nextIndex
+        [product.id]: nextIndex,
       };
     }, 1200);
   }
@@ -139,14 +165,14 @@ export class ProductList implements OnInit, OnDestroy {
       clearInterval(this.hoverIntervals[product.id]);
       delete this.hoverIntervals[product.id];
     }
-    
+
     this.activeImageMap = {
       ...this.activeImageMap,
-      [product.id]: 0
+      [product.id]: 0,
     };
   }
 
   ngOnDestroy(): void {
-    Object.values(this.hoverIntervals).forEach(interval => clearInterval(interval));
+    Object.values(this.hoverIntervals).forEach((interval) => clearInterval(interval));
   }
 }
