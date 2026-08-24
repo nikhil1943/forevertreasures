@@ -20,12 +20,6 @@
   align-items: start;
 }
 
-@media (max-width: 768px) {
-  .cart-layout {
-    grid-template-columns: 1fr;
-  }
-}
-
 .cart-items {
   display: flex;
   flex-direction: column;
@@ -47,16 +41,20 @@
   height: 90px;
   object-fit: cover;
   border-radius: 6px;
+  flex-shrink: 0; /* Prevents image from shrinking when space is tight */
 }
 
 .item-details {
   flex: 1;
+  min-width: 0; /* Prevents long text from overflowing flex parent */
 }
 
 .item-title {
   font-weight: 600;
   color: #0f172a;
   text-decoration: none;
+  display: block;
+  word-break: break-word; /* Allows long product names to wrap cleanly */
 }
 
 .item-price {
@@ -68,6 +66,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
+  flex-wrap: wrap; /* Prevents quantity input and remove button from overlapping */
 }
 
 .quantity-control {
@@ -81,6 +80,7 @@
   padding: 0.3rem 0.5rem;
   border: 1px solid #cbd5e1;
   border-radius: 4px;
+  box-sizing: border-box;
 }
 
 .remove-btn {
@@ -89,7 +89,8 @@
   color: #ef4444;
   cursor: pointer;
   font-size: 0.875rem;
-  padding: 0;
+  padding: 0.25rem 0;
+  white-space: nowrap; /* Prevents remove text from awkwardly breaking */
 }
 
 .remove-btn:hover {
@@ -100,6 +101,8 @@
   font-weight: 700;
   font-size: 1.1rem;
   color: #0f172a;
+  white-space: nowrap;
+  margin-left: auto; /* Keeps subtotal cleanly aligned on the right on desktop */
 }
 
 /* Order Summary Box */
@@ -138,4 +141,26 @@
 
 .btn-primary:hover {
   background-color: #1d4ed8;
+}
+
+/* Responsive adjustments to prevent overlap on mobile devices */
+@media (max-width: 768px) {
+  .cart-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .cart-item {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .item-subtotal {
+    margin-left: 0;
+    width: 100%;
+    text-align: right;
+    border-top: 1px dashed #e2e8f0;
+    padding-top: 0.5rem;
+  }
 }
