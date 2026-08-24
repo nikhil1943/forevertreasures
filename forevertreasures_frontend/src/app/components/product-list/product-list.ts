@@ -9,7 +9,7 @@ import { RouterLink } from '@angular/router';
 export interface PriceRange {
   label: string;
   min: number;
-  max: number | null; // null represents no upper limit
+  max: number | null;
 }
 
 @Component({
@@ -34,6 +34,10 @@ export class ProductList implements OnInit, OnDestroy {
   searchQuery: string = '';
   loading: boolean = true;
 
+  // Pagination state
+  currentPage: number = 1;
+  pageSize: number = 12;
+
   priceRanges: PriceRange[] = [
     { label: 'Under Rs. 1,000', min: 0, max: 1000 },
     { label: 'Rs. 1,000 - Rs. 5,000', min: 1000, max: 5000 },
@@ -45,20 +49,21 @@ export class ProductList implements OnInit, OnDestroy {
   private hoverIntervals: { [productId: number]: ReturnType<typeof setInterval> } = {};
 
   constructor() {
-    // Automatically reacts to filter changes from Navbar or local controls without URL parameters
     effect(() => {
       const filters = this.productService.activeFilters();
 
       if (isPlatformBrowser(this.platformId)) {
         this.selectedCategoryId = filters.categoryId ?? null;
         this.searchQuery = filters.search || '';
+        this.currentPage = filters.page || 1;
+        this.pageSize = filters.limit || 12;
 
         if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
           const min = filters.minPrice ?? 0;
           const max = filters.maxPrice ?? null;
           
           this.selectedPriceRange = this.priceRanges.find(r => r.min === min && r.max === max) || {
-            label: 'Navbar Selected Range',
+            label: 'Selected Range',
             min: min,
             max: max
           };
@@ -97,7 +102,7 @@ export class ProductList implements OnInit, OnDestroy {
     const max = this.selectedPriceRange?.max ?? undefined;
 
     this.productService
-      .getProducts(this.searchQuery, this.selectedCategoryId ?? undefined, min, max)
+      .getProducts(this.searchQuery, this.selectedCategoryId ?? undefined, min, max, this.currentPage, this.pageSize)
       .subscribe({
         next: (data) => {
           this.products = data;
@@ -111,6 +116,11 @@ export class ProductList implements OnInit, OnDestroy {
       });
   }
 
+  changePage(newPage: number): void {
+    if (newPage < 1) return;
+    this.productService.setPage(newPage);
+  }
+
   onCategoryChange(): void {
     this.productService.setCategoryFilter(this.selectedCategoryId ?? undefined);
   }
@@ -122,7 +132,7 @@ export class ProductList implements OnInit, OnDestroy {
   }
 
   onSearchChange(): void {
-    this.productService.activeFilters.update(f => ({ ...f, search: this.searchQuery }));
+    this.productService.activeFilters.update(f => ({ ...f, search: this.searchQuery, page: 1 }));
   }
 
   getSafeUrl(url: string): SafeUrl {

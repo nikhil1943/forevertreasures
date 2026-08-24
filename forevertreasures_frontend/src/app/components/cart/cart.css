@@ -7,10 +7,39 @@
 }
 
 .empty-cart {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   text-align: center;
-  padding: 3rem 1rem;
+  padding: 4rem 1.5rem;
   background: #f8fafc;
   border-radius: 8px;
+  border: 1px dashed #cbd5e1;
+  gap: 1.25rem; /* Controls exact spacing between icon, text, and button */
+}
+
+.empty-cart p,
+.empty-cart h2,
+.empty-cart h3 {
+  margin: 0;
+  color: #475569;
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+/* Specific button styling inside empty cart */
+.empty-cart .btn-primary,
+.empty-cart a.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: auto; /* Prevents button from expanding to 100% width */
+  min-width: 180px;
+  margin-top: 0; /* Let flex gap handle spacing */
+  padding: 0.75rem 1.75rem;
+  text-decoration: none;
+  box-sizing: border-box;
 }
 
 .cart-layout {
