@@ -1,12 +1,11 @@
-/* Main Page Container */
+/* Container Layout */
 .contact-container {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 6rem 1.5rem 3rem 1.5rem; /* 6rem top padding clears fixed navbar */
+  padding: 6rem 1.5rem 3rem 1.5rem; /* Top padding clears fixed navbar */
   box-sizing: border-box;
 }
 
-/* Page Header */
 .contact-header {
   text-align: center;
   margin-bottom: 2.5rem;
@@ -24,7 +23,7 @@
   font-size: 1rem;
 }
 
-/* 2-Column Side-by-Side Layout Grid */
+/* Side-by-Side Horizontal Grid */
 .contact-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -32,25 +31,27 @@
   width: 100%;
 }
 
-/* Desktop View (Left: Info, Right: Form) */
+/* Desktop View: Side-by-side Cards */
 @media (min-width: 768px) {
   .contact-grid {
-    grid-template-columns: 1fr 1.4fr;
+    grid-template-columns: 1fr 1.35fr; /* Info Card (Left) | Form Card (Right) */
     gap: 2.5rem;
-    align-items: start; /* Prevents card height distortion */
+    align-items: start; /* Prevents vertical stretching */
   }
 }
 
-/* Left Column: Info Card */
-.info-card {
+/* Card Styling */
+.info-card,
+.form-card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  height: fit-content;
+  height: fit-content; /* Keeps cards naturally sized */
 }
 
+/* Left Card: Info Items */
 .info-card h2 {
   font-size: 1.25rem;
   margin-bottom: 1.5rem;
@@ -78,6 +79,7 @@
   align-items: center;
   justify-content: center;
   margin-top: 0.2rem;
+  color: #0f172a;
 }
 
 .info-item strong {
@@ -95,24 +97,15 @@
 }
 
 .info-item a {
-  color: inherit;
-  text-decoration: underline;
+  color: #2563eb;
+  text-decoration: none;
 }
 
 .info-item a:hover {
-  opacity: 0.8;
+  text-decoration: underline;
 }
 
-/* Right Column: Form Card */
-.form-card {
-  background-color: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 2rem;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
-  height: fit-content;
-}
-
+/* Right Card: Form Styling */
 .success-banner {
   background-color: #dcfce7;
   color: #15803d;
