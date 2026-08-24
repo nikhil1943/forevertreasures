@@ -20,7 +20,7 @@
       <div class="main-image-wrapper">
         <img [src]="getSafeUrl(galleryImages[selectedImageIndex])" [alt]="product.title" class="main-image" />
       </div>
-      <div class="thumbnail-strip">
+      <div class="thumbnail-strip" *ngIf="galleryImages.length > 1">
         <img 
           *ngFor="let img of galleryImages; let i = index" 
           [src]="getSafeUrl(img)" 
@@ -34,9 +34,9 @@
 
     <!-- Right Column: Product Details -->
     <div class="details-section">
-      <span class="category-badge">{{ product.category.name }}</span>
+      <span class="category-badge">{{ product.category?.name || 'General' }}</span>
       <h1 class="title">{{ product.title }}</h1>
-      <p class="price">${{ product.price.toFixed(2) }}</p>
+      <p class="price">Rs. {{ product.price.toFixed(2) }}</p>
 
       <div class="stock-status">
         <span [class.in-stock]="product.stock_quantity > 0" [class.out-of-stock]="product.stock_quantity <= 0">
@@ -48,25 +48,43 @@
         {{ product.description || 'No product description available for this item.' }}
       </p>
 
-      <!-- Purchase Actions & Quantity Selector -->
+      <!-- Purchase Actions & Custom Quantity Selector -->
       <div class="actions" *ngIf="product.stock_quantity > 0">
         <div class="quantity-wrapper">
-          <label for="quantity">Qty:</label>
-          <input 
-            id="quantity" 
-            type="number" 
-            [(ngModel)]="quantity" 
-            min="1" 
-            [max]="product.stock_quantity" 
-            class="qty-input" 
-          />
+          <label class="qty-label" for="quantity">Qty</label>
+          <div class="qty-control">
+            <button 
+              type="button" 
+              class="qty-btn" 
+              (click)="decreaseQuantity()" 
+              [disabled]="quantity <= 1"
+              aria-label="Decrease quantity">
+              −
+            </button>
+            <input 
+              id="quantity" 
+              type="number" 
+              [(ngModel)]="quantity" 
+              min="1" 
+              [max]="product.stock_quantity" 
+              class="qty-input" 
+            />
+            <button 
+              type="button" 
+              class="qty-btn" 
+              (click)="increaseQuantity()" 
+              [disabled]="quantity >= product.stock_quantity"
+              aria-label="Increase quantity">
+              +
+            </button>
+          </div>
         </div>
 
         <button (click)="addToCart()" class="btn btn-primary">
           Add to Cart
         </button>
 
-        <span *ngIf="addedMessage" class="success-badge">✓ Added!</span>
+        <span *ngIf="addedMessage" class="success-badge">✓ Added to Cart!</span>
       </div>
 
       <div class="actions" *ngIf="product.stock_quantity <= 0">

@@ -144,3 +144,20 @@
 .submit-btn:hover {
   background-color: #1e293b;
 }
+
+
+
+.info-item .svg-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-item a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.info-item a:hover {
+  opacity: 0.8;
+}

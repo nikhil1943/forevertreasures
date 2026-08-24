@@ -16,6 +16,50 @@
   margin-top: 6px;
 }
 
+/* Filter Controls Bar */
+.filter-bar {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-input {
+  padding: 0.6rem 1rem;
+  flex: 1;
+  min-width: 220px;
+  border: 1px solid #e8e6e1;
+  border-radius: 4px;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.filter-input:focus {
+  border-color: var(--gold-primary, #c5a059);
+}
+
+.filter-select {
+  padding: 0.6rem 1rem;
+  min-width: 180px;
+  border: 1px solid #e8e6e1;
+  border-radius: 4px;
+  background-color: #ffffff;
+  color: var(--bg-obsidian, #1a1a1a);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.filter-select:focus {
+  border-color: var(--gold-primary, #c5a059);
+  box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.15);
+}
+
 /* Product Grid Cards */
 .product-grid {
   display: grid;

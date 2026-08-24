@@ -63,6 +63,18 @@ export class ProductDetail implements OnInit {
     return this.sanitizer.bypassSecurityTrustUrl(url);
   }
 
+  decreaseQuantity(): void {
+    if (this.quantity > 1) {
+      this.quantity--;
+    }
+  }
+
+  increaseQuantity(): void {
+    if (this.product && this.quantity < this.product.stock_quantity) {
+      this.quantity++;
+    }
+  }
+
   addToCart(): void {
     if (this.product) {
       this.cartService.addToCart(this.product, this.quantity);

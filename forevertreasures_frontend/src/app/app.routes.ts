@@ -12,7 +12,7 @@ import { adminGuard } from './guards/admin-guard';
 import { LoginComponent } from './components/login/login';
 
 export const routes: Routes = [
-  { path: '', component: LoginComponent, pathMatch: 'full' },
+  { path: '', component: HomePage, pathMatch: 'full' },
   { path: 'homepage', redirectTo: '', pathMatch: 'full' },
   { path: 'products', component: ProductList },
   { path: 'products/:id', component: ProductDetail },

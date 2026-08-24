@@ -1,6 +1,8 @@
 <header class="navbar">
   <div class="nav-container">
-    <a routerLink="/" (click)="closeMobileMenu()" class="gold-shimmer-logo">Forever Treasures</a>
+    <a routerLink="/" (click)="closeMobileMenu()" class="gold-shimmer-logo">
+      Forever Treasures <br> Gifting Life's Greatest Milestones
+    </a>
     
     <!-- Animated Hamburger Toggle -->
     <button 
@@ -25,7 +27,7 @@
 
       <a routerLink="/" (click)="closeMobileMenu()" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">Home</a>
       <a routerLink="/about-us" (click)="closeMobileMenu()" routerLinkActive="active">About Us</a>
-      <a routerLink="/products" (click)="closeMobileMenu()" routerLinkActive="active">Products</a>
+      <a routerLink="/products" (click)="closeMobileMenu()" routerLinkActive="active">Shop Now</a>
       <a routerLink="/contact-us" (click)="closeMobileMenu()" routerLinkActive="active">Contact Us</a>
       
       <!-- Seller Portal Link -->
@@ -33,7 +35,8 @@
         ⚡ Portal
       </a>
       
-      <button (click)="handleCartClick()" class="cart-link">
+      <!-- Cart Link (Visible ONLY when logged in) -->
+      <button *ngIf="authService.isLoggedIn()" (click)="handleCartClick()" class="cart-link">
         🛒 Cart
         <span *ngIf="totalCount() > 0" class="cart-badge">{{ totalCount() }}</span>
       </button>
@@ -42,7 +45,7 @@
       <ng-container *ngIf="authService.isLoggedIn(); else showLogin">
         <div class="user-session">
           <span class="role-badge" [class.admin]="authService.isAdmin()">
-            {{ authService.isAdmin() ? 'Seller' : 'Customer' }}
+            {{ authService.isAdmin() ? 'Seller' : (authService.currentUser()?.fullName || authService.getUserName() || 'User') }}
           </span>
           <button (click)="handleLogout()" class="auth-btn logout-btn">Logout</button>
         </div>

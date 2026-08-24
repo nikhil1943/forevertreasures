@@ -2,31 +2,36 @@
   <h2 class="page-title" style="margin-bottom: 1.5rem;">Explore Catalog</h2>
 
   <!-- Filters & Search Bar -->
-  <div style="display: flex; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+  <div class="filter-bar">
     <input 
       type="text" 
       [(ngModel)]="searchQuery" 
       (input)="onSearchChange()" 
       placeholder="Search products..." 
-      style="padding: 0.5rem 1rem; flex: 1; min-width: 200px; border: 1px solid #ccc; border-radius: 4px;"
+      class="filter-input search-input"
     />
 
-    <button 
-      (click)="onCategorySelect(null)" 
-      [style.background-color]="selectedCategoryId === null ? '#007bff' : '#f0f0f0'"
-      [style.color]="selectedCategoryId === null ? '#fff' : '#000'"
-      style="padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
-      All Categories
-    </button>
+    <!-- Filter by Category Dropdown -->
+    <select 
+      class="filter-select"
+      [(ngModel)]="selectedCategoryId" 
+      (change)="onCategoryChange()">
+      <option [ngValue]="null">Filter by Category</option>
+      <option *ngFor="let cat of categories" [ngValue]="cat.id">
+        {{ cat.name }}
+      </option>
+    </select>
 
-    <button 
-      *ngFor="let cat of categories" 
-      (click)="onCategorySelect(cat.id)"
-      [style.background-color]="selectedCategoryId === cat.id ? '#007bff' : '#f0f0f0'"
-      [style.color]="selectedCategoryId === cat.id ? '#fff' : '#000'"
-      style="padding: 0.5rem 1rem; border: none; border-radius: 4px; cursor: pointer;">
-      {{ cat.name }}
-    </button>
+    <!-- Filter by Price Dropdown -->
+    <select 
+      class="filter-select"
+      [(ngModel)]="selectedPriceRange" 
+      (change)="onPriceRangeChange()">
+      <option [ngValue]="null">Filter by Price</option>
+      <option *ngFor="let range of priceRanges" [ngValue]="range">
+        {{ range.label }}
+      </option>
+    </select>
   </div>
 
   <!-- Loading Indicator -->

@@ -6,6 +6,12 @@ import { Category, Product, ProductService } from '../../services/product';
 import { Cart } from '../../services/cart';
 import { RouterLink } from '@angular/router';
 
+export interface PriceRange {
+  label: string;
+  min: number;
+  max: number | null; // null represents no upper limit
+}
+
 @Component({
   selector: 'app-product-list',
   standalone: true,
@@ -17,20 +23,29 @@ export class ProductList implements OnInit, OnDestroy {
   private productService = inject(ProductService);
   private cartService = inject(Cart);
   private sanitizer = inject(DomSanitizer);
-  private platformId = inject(PLATFORM_ID); // <-- Inject PLATFORM_ID
+  private platformId = inject(PLATFORM_ID);
 
-  products: Product[] = [];
+  allProducts: Product[] = []; // Stores complete fetched list
+  products: Product[] = [];    // Stores filtered list to render
   categories: Category[] = [];
   
   selectedCategoryId: number | null = null;
+  selectedPriceRange: PriceRange | null = null;
   searchQuery: string = '';
   loading: boolean = true;
+
+  // Custom price ranges (Modify values here as needed)
+  priceRanges: PriceRange[] = [
+    { label: 'Under Rs. 1,000', min: 0, max: 1000 },
+    { label: 'Rs. 1,000 - Rs. 5,000', min: 1000, max: 5000 },
+    { label: 'Rs. 5,000 - Rs. 15,000', min: 5000, max: 15000 },
+    { label: 'Above Rs. 15,000', min: 15000, max: null }
+  ];
 
   activeImageMap: { [productId: number]: number } = {};
   private hoverIntervals: { [productId: number]: ReturnType<typeof setInterval> } = {};
 
   ngOnInit(): void {
-    // Only execute initial fetching inside browser client
     if (isPlatformBrowser(this.platformId)) {
       this.loadCategories();
       this.loadProducts();
@@ -55,7 +70,8 @@ export class ProductList implements OnInit, OnDestroy {
     this.productService.getProducts(this.searchQuery, this.selectedCategoryId ?? undefined)
       .subscribe({
         next: (data) => {
-          this.products = data;
+          this.allProducts = data;
+          this.applyPriceFilter();
           this.loading = false;
         },
         error: (err) => {
@@ -65,9 +81,26 @@ export class ProductList implements OnInit, OnDestroy {
       });
   }
 
-  onCategorySelect(categoryId: number | null): void {
-    this.selectedCategoryId = categoryId;
+  applyPriceFilter(): void {
+    if (!this.selectedPriceRange) {
+      this.products = [...this.allProducts];
+      return;
+    }
+
+    const { min, max } = this.selectedPriceRange;
+    this.products = this.allProducts.filter(product => {
+      const minMatch = product.price >= min;
+      const maxMatch = max === null || product.price <= max;
+      return minMatch && maxMatch;
+    });
+  }
+
+  onCategoryChange(): void {
     this.loadProducts();
+  }
+
+  onPriceRangeChange(): void {
+    this.applyPriceFilter();
   }
 
   onSearchChange(): void {
