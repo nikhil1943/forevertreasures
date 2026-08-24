@@ -1,8 +1,9 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Cart } from './services/cart';
 import { AuthService } from './services/auth';
+import { ProductService, Category } from './services/product';
 
 @Component({
   selector: 'app-root',
@@ -11,16 +12,29 @@ import { AuthService } from './services/auth';
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
-export class App {
+export class App implements OnInit {
   private cartService = inject(Cart);
   private router = inject(Router);
+  private productService = inject(ProductService);
   public authService = inject(AuthService);
 
   totalCount = this.cartService.totalCount;
   isMobileMenuOpen = signal(false);
+  categories = signal<Category[]>([]);
 
   private touchStartY = 0;
   private readonly minSwipeDistance = 50; // Minimum vertical pixel threshold
+
+  ngOnInit(): void {
+    this.loadCategories();
+  }
+
+  loadCategories(): void {
+    this.productService.getCategories().subscribe({
+      next: (data) => this.categories.set(data),
+      error: (err) => console.error('Failed to load nav categories:', err)
+    });
+  }
 
   toggleMobileMenu(): void {
     this.isMobileMenuOpen.update(open => !open);

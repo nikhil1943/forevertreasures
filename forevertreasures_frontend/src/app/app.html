@@ -42,13 +42,18 @@
 
         <!-- Hover Mega Menu -->
         <div class="mega-menu">
-          <!-- Left Column: Categories -->
+          <!-- Left Column: Dynamic Categories -->
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Categories</h4>
             <a [routerLink]="['/products']" [queryParams]="{ categoryId: null }" (click)="closeMobileMenu()">All Products</a>
-            <a [routerLink]="['/products']" [queryParams]="{ categoryId: 1 }" (click)="closeMobileMenu()">Jewelry</a>
-            <a [routerLink]="['/products']" [queryParams]="{ categoryId: 2 }" (click)="closeMobileMenu()">Keepsakes</a>
-            <a [routerLink]="['/products']" [queryParams]="{ categoryId: 3 }" (click)="closeMobileMenu()">Personalized Gifts</a>
+            
+            <a 
+              *ngFor="let category of categories()" 
+              [routerLink]="['/products']" 
+              [queryParams]="{ categoryId: category.id }" 
+              (click)="closeMobileMenu()">
+              {{ category.name }}
+            </a>
           </div>
 
           <!-- Right Column: Price Ranges -->
