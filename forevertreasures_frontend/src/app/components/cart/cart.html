@@ -3,7 +3,7 @@
 
   <!-- Empty Cart State -->
   <div *ngIf="cartItems().length === 0" class="empty-cart">
-    <p>Your cart is waiting for your next Treasure.</p>
+    <h1>Your cart is waiting for your next Treasure.</h1>
     <a routerLink="/products" class="btn btn-primary">Continue Shopping</a>
   </div>
 
@@ -45,7 +45,7 @@
         
         <!-- Subtotal -->
         <div class="item-subtotal">
-          <p>Rs. {{ (item.product.price * item.quantity).toFixed(2) }}</p>
+          <p>Rs. {{ (+item.product.price * item.quantity).toFixed(2) }}</p>
         </div>
       </div>
     </div>

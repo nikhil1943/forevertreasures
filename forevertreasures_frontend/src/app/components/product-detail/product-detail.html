@@ -34,7 +34,7 @@
 
     <!-- Right Column: Product Details -->
     <div class="details-section">
-      <span class="category-badge">{{ product.category.name }}</span>
+      <span class="category-badge">{{ product.category?.name }}</span>
       <h1 class="title">{{ product.title }}</h1>
       <p class="price">Rs. {{ product.price | number:'1.2-2' }}</p>
       <div class="stock-status">
