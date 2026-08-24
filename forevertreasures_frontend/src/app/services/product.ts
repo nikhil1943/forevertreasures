@@ -38,7 +38,7 @@ export class ProductService {
   activeFilters = signal<ProductFilters>({});
 
   // ==========================================
-  // FILTER METHODS (Restored)
+  // FILTER METHODS
   // ==========================================
 
   setCategoryFilter(categoryId?: number): void {
@@ -58,14 +58,16 @@ export class ProductService {
   }
 
   // ==========================================
-  // API METHODS (Updated for Vercel Build)
+  // API METHODS (Paginated & SSR Safe)
   // ==========================================
 
   getProducts(
     search?: string,
     categoryId?: number,
     minPrice?: number,
-    maxPrice?: number
+    maxPrice?: number,
+    limit: number = 20, // Default to 20 for infinite scroll chunking
+    skip: number = 0
   ): Observable<Product[]> {
     let params = new HttpParams();
 
@@ -73,6 +75,10 @@ export class ProductService {
     if (categoryId !== undefined && categoryId !== null) params = params.set('category_id', categoryId.toString());
     if (minPrice !== undefined && minPrice !== null) params = params.set('min_price', minPrice.toString());
     if (maxPrice !== undefined && maxPrice !== null) params = params.set('max_price', maxPrice.toString());
+    
+    // Append pagination parameters
+    params = params.set('limit', limit.toString());
+    params = params.set('skip', skip.toString());
 
     return this.http.get<Product[]>(`${this.apiUrl}/products`, { params }).pipe(
       map(res => {

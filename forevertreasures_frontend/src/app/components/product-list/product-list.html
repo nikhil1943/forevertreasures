@@ -10,32 +10,10 @@
       placeholder="Search products..." 
       class="filter-input search-input"
     />
-
-    <!-- Filter by Category Dropdown -->
-    <!-- <select 
-      class="filter-select"
-      [(ngModel)]="selectedCategoryId" 
-      (change)="onCategoryChange()">
-      <option [ngValue]="null">Filter by Category</option>
-      <option *ngFor="let cat of categories" [ngValue]="cat.id">
-        {{ cat.name }}
-      </option>
-    </select> -->
-
-    <!-- Filter by Price Dropdown -->
-    <!-- <select 
-      class="filter-select"
-      [(ngModel)]="selectedPriceRange" 
-      (change)="onPriceRangeChange()">
-      <option [ngValue]="null">Filter by Price</option>
-      <option *ngFor="let range of priceRanges" [ngValue]="range">
-        {{ range.label }}
-      </option>
-    </select> -->
   </div>
 
-  <!-- Loading State -->
-  <div *ngIf="loading" class="product-grid">
+  <!-- Initial Loading State (Skeleton) -->
+  <div *ngIf="isInitialLoad" class="product-grid">
     <div *ngFor="let item of [1, 2, 3, 4, 5, 6, 7, 8]" class="product-card skeleton-card">
       <div class="skeleton-image skeleton-pulse"></div>
       <div class="skeleton-info">
@@ -47,7 +25,7 @@
   </div>
 
   <!-- Product Grid -->
-  <div *ngIf="!loading && products.length > 0" class="product-grid">
+  <div *ngIf="products.length > 0" class="product-grid">
     <div *ngFor="let product of products" class="product-card">
       
       <div class="product-info">
@@ -94,8 +72,23 @@
     </div>
   </div>
 
-  <!-- Empty State -->
-  <div *ngIf="!loading && products.length === 0" class="no-products" style="text-align: center; padding: 3rem; color: #64748b;">
-    No products found matching your criteria.
+  <!-- Infinite Scroll Loading Indicators -->
+  <div class="scroll-status-container">
+    
+    <!-- Shows while user scrolls and app is fetching more -->
+    <div *ngIf="isLoadingMore" class="loading-spinner">
+      <div class="spinner"></div>
+      <p>Loading more treasures...</p>
+    </div>
+
+    <!-- Shows when the user has scrolled through everything -->
+    <div *ngIf="!hasMore && !isInitialLoad && products.length > 0" class="end-of-list">
+      <p>You've seen everything! Check back later for new arrivals.</p>
+    </div>
+
+    <!-- Empty State if filters yield no results -->
+    <div *ngIf="!isInitialLoad && products.length === 0" class="no-results">
+      <p>No products found matching your criteria.</p>
+    </div>
   </div>
 </div>

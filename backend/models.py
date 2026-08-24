@@ -92,8 +92,8 @@ class Product(Base):
     # Changed String to Text for large Base64 character strings
     image_urls = Column(ARRAY(Text), default=list) 
     
-    is_visible = Column(Boolean, default=True)
-    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    is_visible = Column(Boolean, default=True, index=True)
+    category_id = Column(Integer, ForeignKey("categories.id", ondelete="CASCADE"), nullable=False, index=True)
 
     category = relationship("Category", back_populates="products")
     

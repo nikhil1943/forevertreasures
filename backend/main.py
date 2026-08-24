@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Any
 
 import jwt
+from pydantic import BaseModel
 import stripe
 import razorpay
 from fastapi import FastAPI, Depends, HTTPException, Query, status, APIRouter, Request, Header, BackgroundTasks
@@ -12,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session, joinedload
-from pydantic import BaseModel, EmailStr
+from cachetools import TTLCache # <-- New import for caching
 
 import models
 import schemas
@@ -27,6 +28,11 @@ from utils.security import (
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ForeverTreasures API")
+
+# --- In-Memory Cache Setup ---
+# Store up to 10 categories for 5 mins, and 200 product query variations for 5 mins
+category_cache = TTLCache(maxsize=10, ttl=300)
+product_cache = TTLCache(maxsize=200, ttl=300)
 
 # --- Security & JWT Setup ---
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fallback_secret")
@@ -64,7 +70,6 @@ def generate_slug(text: str) -> str:
     return re.sub(r'[\s_-]+', '-', text)
 
 def hash_password(password: str) -> str:
-    # Truncate to 72 bytes to prevent bcrypt ValueError
     return pwd_context.hash(password[:72])
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
@@ -243,9 +248,6 @@ def verify_2fa(payload: schemas.Verify2FARequest, db: Session = Depends(get_db))
 
     clean_code = str(payload.code).strip()
 
-    # -------------------------------------------------------------
-    # DIRECT MASTER OTP BYPASS (Bypasses DB hash & expiration checks)
-    # -------------------------------------------------------------
     if MASTER_OTP_CODE and clean_code == MASTER_OTP_CODE:
         user.two_factor_code_hash = None
         user.two_factor_expires_at = None
@@ -264,7 +266,6 @@ def verify_2fa(payload: schemas.Verify2FARequest, db: Session = Depends(get_db))
             }
         }
 
-    # STANDARD 2FA CHECKS
     if user.role.lower() != "admin":
         raise HTTPException(status_code=400, detail="Invalid verification request.")
     if not user.two_factor_code_hash or not user.two_factor_expires_at:
@@ -325,7 +326,6 @@ def forgot_password(
     if user:
         reset_token = create_password_reset_token(user.email)
         # background_tasks.add_task(send_reset_password_email_task, user.email, reset_token)
-
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 
 @auth_router.post("/reset-password")
@@ -359,15 +359,12 @@ def get_admin_dashboard_stats(db: Session = Depends(get_db)):
         "totalProducts": total_products
     }
 
-# --- Admin Order Management ---
-
 @admin_router.get("/orders")
 def get_all_admin_orders(db: Session = Depends(get_db)):
     return db.query(models.Order).order_by(models.Order.id.desc()).all()
 
 @admin_router.get("/orders/{order_id}")
 def get_admin_order_by_id(order_id: int, db: Session = Depends(get_db)):
-    """Fetch full order details including line items for the Admin panel."""
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     if not order:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Order not found")
@@ -383,25 +380,6 @@ def update_order_status(order_id: int, payload: OrderStatusUpdatePayload, db: Se
     db.commit()
     db.refresh(order)
     return order
-
-
-@admin_router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_admin_product(product_id: int, db: Session = Depends(get_db)):
-    product = db.query(models.Product).filter(models.Product.id == product_id).first()
-    if not product:
-        raise HTTPException(status_code=404, detail="Product not found")
-
-    # 1. Unlink from order items so foreign key constraint doesn't crash
-    db.query(models.OrderItem).filter(models.OrderItem.product_id == product_id).update(
-        {"product_id": None}
-    )
-
-    # 2. Hard delete the product record
-    db.delete(product)
-    db.commit()
-    return None
-
-# --- Admin Category Endpoints ---
 
 @admin_router.get("/categories", response_model=List[schemas.CategoryResponse])
 def get_admin_categories(db: Session = Depends(get_db)):
@@ -423,6 +401,9 @@ def create_category(payload: schemas.CategoryCreate, db: Session = Depends(get_d
     db.commit()
     db.refresh(new_category)
 
+    # Invalidate public category cache since data changed
+    category_cache.clear()
+
     return new_category
 
 @admin_router.put("/categories/{category_id}", response_model=schemas.CategoryResponse)
@@ -436,6 +417,7 @@ def update_category(category_id: int, payload: schemas.CategoryCreate, db: Sessi
 
     db.commit()
     db.refresh(category)
+    category_cache.clear() # Invalidate cache
     return category
 
 @admin_router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -446,15 +428,12 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
 
     db.delete(category)
     db.commit()
+    category_cache.clear() # Invalidate cache
     return None
-
-# --- Admin Product Endpoints ---
 
 @admin_router.get("/products", response_model=List[schemas.ProductResponse])
 def get_admin_products(db: Session = Depends(get_db)):
-    """Fetch all products (including hidden ones) with eager category loading."""
     return db.query(models.Product).options(joinedload(models.Product.category)).all()
-
 
 @admin_router.post("/products", response_model=schemas.ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_admin_product(payload: schemas.ProductCreate, db: Session = Depends(get_db)):
@@ -465,9 +444,9 @@ def create_admin_product(payload: schemas.ProductCreate, db: Session = Depends(g
     db.commit()
     db.refresh(new_product)
     
-    # Eagerly fetch category relationship so ProductResponse can serialize category
+    product_cache.clear() # Invalidate public products cache
+    
     return db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == new_product.id).first()
-
 
 @admin_router.put("/products/{product_id}", response_model=schemas.ProductResponse)
 def update_admin_product(product_id: int, payload: schemas.ProductCreate, db: Session = Depends(get_db)):
@@ -481,10 +460,9 @@ def update_admin_product(product_id: int, payload: schemas.ProductCreate, db: Se
 
     db.commit()
     db.refresh(product)
+    product_cache.clear() # Invalidate public products cache
     
-    # Return updated product with loaded category relationship
     return db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == product.id).first()
-
 
 @admin_router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_admin_product(product_id: int, db: Session = Depends(get_db)):
@@ -492,16 +470,17 @@ def delete_admin_product(product_id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Soft delete to avoid violating order_items foreign key constraints
+    # Soft delete
     product.is_visible = False
     db.commit()
+    product_cache.clear() # Invalidate public products cache
     return None
+
 
 # ==========================================
 # PUBLIC STOREFRONT ENDPOINTS (/api/...)
 # ==========================================
 
-# --- User Address Endpoints ---
 @app.get("/api/user/addresses", response_model=List[schemas.AddressResponse])
 def get_user_addresses(current_user: models.User = Depends(get_current_user_from_token), db: Session = Depends(get_db)):
     return db.query(models.Address).filter(models.Address.user_id == current_user.id).all()
@@ -529,10 +508,21 @@ def delete_user_address(address_id: int, current_user: models.User = Depends(get
     db.commit()
     return db.query(models.Address).filter(models.Address.user_id == current_user.id).all()
 
-# --- Public Store Catalog & Product Details ---
+# --- Public Store Catalog & Product Details (CACHED & PAGINATED) ---
 @app.get("/api/categories", response_model=List[schemas.CategoryResponse])
 def get_categories(db: Session = Depends(get_db)):
-    return db.query(models.Category).all()
+    cache_key = "public_categories"
+    
+    # 1. Check cache first
+    if cache_key in category_cache:
+        return category_cache[cache_key]
+        
+    # 2. Fetch if not in cache
+    categories = db.query(models.Category).all()
+    
+    # 3. Save to cache
+    category_cache[cache_key] = categories
+    return categories
 
 @app.get("/api/products", response_model=List[schemas.ProductResponse])
 def get_products(
@@ -540,29 +530,39 @@ def get_products(
     category_id: Optional[int] = Query(None),
     min_price: Optional[float] = Query(None),
     max_price: Optional[float] = Query(None),
+    limit: int = Query(50, le=100), # Added Pagination Limit
+    skip: int = Query(0),           # Added Pagination Skip
     db: Session = Depends(get_db)
 ):
-    """Public catalog endpoint for product list/search page with price filtering."""
-    query = db.query(models.Product).filter(models.Product.is_visible == True)
+    # Unique cache key for exact filter combination
+    cache_key = f"{search}_{category_id}_{min_price}_{max_price}_{limit}_{skip}"
+    
+    if cache_key in product_cache:
+        return product_cache[cache_key]
+
+    # Added joinedload to prevent N+1 queries when serializing CategoryResponse
+    query = db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.is_visible == True)
 
     if search:
         query = query.filter(models.Product.title.ilike(f"%{search}%"))
-        
     if category_id:
         query = query.filter(models.Product.category_id == category_id)
-
     if min_price is not None:
         query = query.filter(models.Product.price >= min_price)
-
     if max_price is not None:
         query = query.filter(models.Product.price <= max_price)
 
-    return query.all()
+    # Apply pagination and execute
+    products = query.offset(skip).limit(limit).all()
+    
+    # Save to cache
+    product_cache[cache_key] = products
+    return products
 
 @app.get("/api/products/{product_id}", response_model=schemas.ProductResponse)
 def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
-    """Public details page endpoint for a specific product."""
-    product = db.query(models.Product).filter(models.Product.id == product_id, models.Product.is_visible == True).first()
+    # Eager load the category here too
+    product = db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == product_id, models.Product.is_visible == True).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     return product
@@ -571,14 +571,12 @@ def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
 # ==========================================
 # STOREFRONT ORDER MANAGEMENT (/api/orders)
 # ==========================================
-
 @orders_router.post("", status_code=status.HTTP_201_CREATED)
 def create_order(
     checkout_data: schemas.CheckoutRequest,
     db: Session = Depends(get_db),
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security_optional)
 ):
-    """Create a new checkout order with stock validation and Razorpay initialization."""
     if not checkout_data.items:
         raise HTTPException(status_code=400, detail="Cart is empty")
 
@@ -649,6 +647,8 @@ def create_order(
 
     db.commit()
     db.refresh(new_order)
+    
+    product_cache.clear() # Clear product cache as stock levels changed
 
     return {
         "id": new_order.id,
@@ -663,7 +663,6 @@ def get_user_order_history(
     current_user: models.User = Depends(get_current_user_from_token),
     db: Session = Depends(get_db)
 ):
-    """Retrieve all past and active orders for the logged-in user."""
     orders = (
         db.query(models.Order)
         .filter(models.Order.user_id == current_user.id)
@@ -678,7 +677,6 @@ def get_order_details(
     current_user: models.User = Depends(get_current_user_from_token),
     db: Session = Depends(get_db)
 ):
-    """Retrieve detailed view for a specific order."""
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     
     if not order:
@@ -698,10 +696,6 @@ def cancel_order(
     current_user: models.User = Depends(get_current_user_from_token),
     db: Session = Depends(get_db)
 ):
-    """
-    Allows a user to cancel an order before shipment.
-    Restocks the reserved product quantities back into inventory stock.
-    """
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
     
     if not order:
@@ -728,6 +722,8 @@ def cancel_order(
     db.commit()
     db.refresh(order)
     
+    product_cache.clear() # Clear product cache as stock levels changed
+    
     return {
         "message": f"Order #{order_id} successfully cancelled and stock returned to inventory.",
         "order": order
@@ -737,10 +733,8 @@ def cancel_order(
 # ==========================================
 # PAYMENTS ROUTER (Stripe + Razorpay)
 # ==========================================
-
 @payment_router.post("/verify-razorpay")
 def verify_razorpay_payment(payload: RazorpayVerifyPayload, db: Session = Depends(get_db)):
-    """Verifies Razorpay payment signature and updates Order status to 'PAID'."""
     try:
         razorpay_client.utility.verify_payment_signature({
             'razorpay_order_id': payload.razorpay_order_id,

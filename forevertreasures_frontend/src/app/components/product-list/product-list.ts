@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, effect, inject, OnDestroy, OnInit } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
+import { Component, effect, inject, OnDestroy, OnInit, HostListener, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Category, Product, ProductService } from '../../services/product';
@@ -23,6 +23,7 @@ export class ProductList implements OnInit, OnDestroy {
   private productService = inject(ProductService);
   private cartService = inject(Cart);
   private sanitizer = inject(DomSanitizer);
+  private platformId = inject(PLATFORM_ID);
 
   products: Product[] = [];
   categories: Category[] = [];
@@ -30,7 +31,13 @@ export class ProductList implements OnInit, OnDestroy {
   selectedCategoryId: number | null = null;
   selectedPriceRange: PriceRange | null = null;
   searchQuery: string = '';
-  loading: boolean = true;
+  
+  // Infinite Scroll State
+  limit = 20; // Fetch 20 products per scroll
+  skip = 0;
+  isInitialLoad: boolean = true; // Shows skeleton loaders
+  isLoadingMore: boolean = false; // Shows spinner at bottom
+  hasMore: boolean = true; // Tracks if we hit the end of the database
 
   priceRanges: PriceRange[] = [
     { label: 'Under Rs. 500', min: 0, max: 500 },
@@ -44,6 +51,7 @@ export class ProductList implements OnInit, OnDestroy {
   private hoverIntervals: { [productId: number]: ReturnType<typeof setInterval> } = {};
 
   constructor() {
+    // Reacts instantly when a user clicks a filter in the Navbar
     effect(() => {
       const filters = this.productService.activeFilters();
       this.selectedCategoryId = filters.categoryId ?? null;
@@ -57,13 +65,14 @@ export class ProductList implements OnInit, OnDestroy {
         this.selectedPriceRange = null;
       }
 
-      this.fetchProducts();
+      if (isPlatformBrowser(this.platformId)) {
+        this.resetAndLoadProducts();
+      }
     });
   }
 
   ngOnInit(): void {
     this.loadCategories();
-    this.fetchProducts();
   }
 
   loadCategories(): void {
@@ -73,34 +82,60 @@ export class ProductList implements OnInit, OnDestroy {
     });
   }
 
-  fetchProducts(): void {
-    this.loading = true;
+  resetAndLoadProducts(): void {
+    this.products = [];
+    this.skip = 0;
+    this.hasMore = true;
+    this.isInitialLoad = true;
+    this.loadProducts();
+  }
+
+  loadProducts(): void {
+    if (this.isLoadingMore || !this.hasMore) return;
+
+    if (!this.isInitialLoad) {
+      this.isLoadingMore = true;
+    }
+
     const min = this.selectedPriceRange?.min ?? undefined;
     const max = this.selectedPriceRange?.max ?? undefined;
 
     this.productService
-      .getProducts(this.searchQuery, this.selectedCategoryId ?? undefined, min, max)
+      .getProducts(this.searchQuery, this.selectedCategoryId ?? undefined, min, max, this.limit, this.skip)
       .subscribe({
         next: (data) => {
-          this.products = data;
-          this.loading = false;
+          // If backend returns fewer items than our limit, we reached the end
+          if (data.length < this.limit) {
+            this.hasMore = false;
+          }
+
+          this.products = [...this.products, ...data];
+          this.skip += this.limit;
+          
+          this.isInitialLoad = false;
+          this.isLoadingMore = false;
         },
         error: (err) => {
           console.error('Failed to load products', err);
-          this.products = [];
-          this.loading = false;
+          this.isInitialLoad = false;
+          this.isLoadingMore = false;
         },
       });
   }
 
-  onCategoryChange(): void {
-    this.productService.setCategoryFilter(this.selectedCategoryId ?? undefined);
-  }
+  // Infinite Scroll Listener
+  @HostListener('window:scroll', [])
+  onWindowScroll(): void {
+    if (!isPlatformBrowser(this.platformId)) return;
+    if (this.isInitialLoad || this.isLoadingMore || !this.hasMore) return;
 
-  onPriceRangeChange(): void {
-    const min = this.selectedPriceRange?.min;
-    const max = this.selectedPriceRange?.max ?? undefined;
-    this.productService.setPriceFilter(min, max);
+    const scrollPosition = window.pageYOffset + window.innerHeight;
+    const documentHeight = document.documentElement.scrollHeight;
+
+    // Load more when user is 300px from the bottom
+    if (scrollPosition >= documentHeight - 300) {
+      this.loadProducts();
+    }
   }
 
   onSearchChange(): void {

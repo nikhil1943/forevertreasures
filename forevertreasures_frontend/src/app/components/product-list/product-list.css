@@ -247,3 +247,43 @@
     background-position: -200% 0;
   }
 }
+
+
+/* Infinite Scroll Status Indicators */
+.scroll-status-container {
+  text-align: center;
+  padding: 3rem 0 1rem 0;
+  width: 100%;
+}
+
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  color: var(--gold-dark, #c5a059);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid rgba(197, 160, 89, 0.2);
+  border-top-color: var(--gold-primary, #c5a059);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.end-of-list p, .no-results p {
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+.no-results {
+  padding: 3rem;
+}
