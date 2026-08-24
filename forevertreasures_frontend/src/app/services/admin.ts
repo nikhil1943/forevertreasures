@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, tap, catchError, of } from 'rxjs';
 import { environment } from '../../environments/prod/environment';
 
 export interface Category {
@@ -54,7 +54,13 @@ export class AdminService {
   // ==========================================
 
   loadCategories(): void {
-    this.http.get<Category[]>(`${this.apiUrl}/categories`).subscribe(data => {
+    this.http.get<Category[]>(`${this.apiUrl}/categories`).pipe(
+      // VERCEL FIX: Catch error if backend is asleep during build
+      catchError((error) => {
+        console.warn('Admin categories fetch failed:', error.message);
+        return of([]);
+      })
+    ).subscribe(data => {
       this.categories.set(data);
     });
   }
@@ -82,7 +88,13 @@ export class AdminService {
   // ==========================================
 
   loadProducts(): void {
-    this.http.get<AdminProduct[]>(`${this.apiUrl}/products`).subscribe(data => {
+    this.http.get<AdminProduct[]>(`${this.apiUrl}/products`).pipe(
+      // VERCEL FIX: Catch error if backend is asleep during build
+      catchError((error) => {
+        console.warn('Admin products fetch failed:', error.message);
+        return of([]);
+      })
+    ).subscribe(data => {
       this.products.set(data);
     });
   }
@@ -116,7 +128,13 @@ export class AdminService {
   // ==========================================
 
   loadOrders(): void {
-    this.http.get<AdminOrder[]>(`${this.apiUrl}/orders`).subscribe(data => {
+    this.http.get<AdminOrder[]>(`${this.apiUrl}/orders`).pipe(
+      // VERCEL FIX: Catch error if backend is asleep during build
+      catchError((error) => {
+        console.warn('Admin orders fetch failed:', error.message);
+        return of([]);
+      })
+    ).subscribe(data => {
       this.orders.set(data);
     });
   }

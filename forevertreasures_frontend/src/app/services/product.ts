@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, map, catchError, of } from 'rxjs';
 import { environment } from '../../environments/prod/environment';
 
 export interface Category {
@@ -37,6 +37,10 @@ export class ProductService {
 
   activeFilters = signal<ProductFilters>({});
 
+  // ==========================================
+  // FILTER METHODS (Restored)
+  // ==========================================
+
   setCategoryFilter(categoryId?: number): void {
     this.activeFilters.update(f => ({ ...f, categoryId }));
   }
@@ -52,6 +56,10 @@ export class ProductService {
   resetFilters(): void {
     this.activeFilters.set({});
   }
+
+  // ==========================================
+  // API METHODS (Updated for Vercel Build)
+  // ==========================================
 
   getProducts(
     search?: string,
@@ -73,13 +81,21 @@ export class ProductService {
           ...p,
           price: Number(p.price) || 0
         }));
+      }),
+      catchError((error) => {
+        console.warn('Products fetch failed (likely SSR build or asleep backend):', error.message);
+        return of([]); // Return empty array so the build continues
       })
     );
   }
 
   getCategories(): Observable<Category[]> {
     return this.http.get<Category[]>(`${this.apiUrl}/categories`).pipe(
-      map(res => Array.isArray(res) ? res : (res as any)?.categories || (res as any)?.data || [])
+      map(res => Array.isArray(res) ? res : (res as any)?.categories || (res as any)?.data || []),
+      catchError((error) => {
+        console.warn('Categories fetch failed:', error.message);
+        return of([]); 
+      })
     );
   }
 
@@ -88,7 +104,11 @@ export class ProductService {
       map(p => ({
         ...p,
         price: Number(p.price) || 0
-      }))
+      })),
+      catchError((error) => {
+        console.warn(`Product ${id} fetch failed:`, error.message);
+        return of({} as Product); 
+      })
     );
   }
 }
