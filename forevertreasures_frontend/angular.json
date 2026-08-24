@@ -16,9 +16,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "prerender":{
-              "discoverRoutes": false
-            },
+            "prerender":false,
             "browser": "src/main.ts",
             "polyfills": ["zone.js"],
             "tsConfig": "tsconfig.app.json",
@@ -31,7 +29,6 @@
               "src/styles.css"
             ],
             "server": "src/main.server.ts",
-            "outputMode": "server",
             "security": {
               "allowedHosts": []
             },
