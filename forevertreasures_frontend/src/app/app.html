@@ -54,10 +54,11 @@
           <!-- Right Column: Price Ranges -->
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Price</h4>
-            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 0, maxPrice: 1000 }" (click)="closeMobileMenu()">Under Rs. 1,000</a>
-            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 1000, maxPrice: 5000 }" (click)="closeMobileMenu()">Rs. 1,000 - Rs. 5,000</a>
-            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 5000, maxPrice: 15000 }" (click)="closeMobileMenu()">Rs. 5,000 - Rs. 15,000</a>
-            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 15000 }" (click)="closeMobileMenu()">Above Rs. 15,000</a>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 0, maxPrice: 500 }" (click)="closeMobileMenu()">Under Rs. 500</a>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 500, maxPrice: 1100 }" (click)="closeMobileMenu()">Under Rs. 1,100</a>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 1100, maxPrice: 2100 }" (click)="closeMobileMenu()">Under Rs. 2,100</a>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 2100, maxPrice: 3500 }" (click)="closeMobileMenu()">Under Rs. 3,500</a>
+            <a [routerLink]="['/products']" [queryParams]="{ minPrice: 3500, maxPrice: 5000 }" (click)="closeMobileMenu()">Under Rs. 5,000</a>
           </div>
         </div>
       </div>
