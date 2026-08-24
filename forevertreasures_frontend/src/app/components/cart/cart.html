@@ -25,7 +25,7 @@
           <a [routerLink]="['/products', item.product.id]" class="item-title">
             {{ item.product.title }}
           </a>
-          <p class="item-price">Rs. {{ item.product.price.toFixed(2) }}</p>
+          <p class="item-price">Rs. {{ item.product.price | number:'1.2-2' }}</p>
           
           <div class="item-actions">
             <div class="quantity-control">
