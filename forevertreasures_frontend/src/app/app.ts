@@ -23,7 +23,7 @@ export class App implements OnInit {
   categories = signal<Category[]>([]);
 
   private touchStartY = 0;
-  private readonly minSwipeDistance = 50; // Minimum vertical pixel threshold
+  private readonly minSwipeDistance = 50;
 
   ngOnInit(): void {
     this.loadCategories();
@@ -34,6 +34,20 @@ export class App implements OnInit {
       next: (data) => this.categories.set(data),
       error: (err) => console.error('Failed to load nav categories:', err)
     });
+  }
+
+  // Navigates and sets Category Filter without URL query parameters
+  filterByCategory(categoryId?: number): void {
+    this.closeMobileMenu();
+    this.productService.setCategoryFilter(categoryId);
+    this.router.navigate(['/products']);
+  }
+
+  // Navigates and sets Price Filter without URL query parameters
+  filterByPrice(minPrice?: number, maxPrice?: number): void {
+    this.closeMobileMenu();
+    this.productService.setPriceFilter(minPrice, maxPrice);
+    this.router.navigate(['/products']);
   }
 
   toggleMobileMenu(): void {
@@ -52,7 +66,6 @@ export class App implements OnInit {
     const touchEndY = event.changedTouches[0].clientY;
     const deltaY = this.touchStartY - touchEndY;
 
-    // Detect upward swipe gesture
     if (deltaY > this.minSwipeDistance && this.isMobileMenuOpen()) {
       this.closeMobileMenu();
     }

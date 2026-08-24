@@ -12,7 +12,7 @@
     />
 
     <!-- Filter by Category Dropdown -->
-    <select 
+    <!-- <select 
       class="filter-select"
       [(ngModel)]="selectedCategoryId" 
       (change)="onCategoryChange()">
@@ -20,10 +20,10 @@
       <option *ngFor="let cat of categories" [ngValue]="cat.id">
         {{ cat.name }}
       </option>
-    </select>
+    </select> -->
 
     <!-- Filter by Price Dropdown -->
-    <select 
+    <!-- <select 
       class="filter-select"
       [(ngModel)]="selectedPriceRange" 
       (change)="onPriceRangeChange()">
@@ -31,7 +31,7 @@
       <option *ngFor="let range of priceRanges" [ngValue]="range">
         {{ range.label }}
       </option>
-    </select>
+    </select> -->
   </div>
 
   <!-- Loading Indicator -->

@@ -1,10 +1,10 @@
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
+import { Component, effect, inject, OnDestroy, OnInit, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Category, Product, ProductService } from '../../services/product';
 import { Cart } from '../../services/cart';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 
 export interface PriceRange {
   label: string;
@@ -24,10 +24,9 @@ export class ProductList implements OnInit, OnDestroy {
   private cartService = inject(Cart);
   private sanitizer = inject(DomSanitizer);
   private platformId = inject(PLATFORM_ID);
-  private route = inject(ActivatedRoute);
 
-  allProducts: Product[] = []; // Stores complete fetched list
-  products: Product[] = [];    // Stores filtered list to render
+  allProducts: Product[] = [];
+  products: Product[] = [];
   categories: Category[] = [];
   
   selectedCategoryId: number | null = null;
@@ -35,7 +34,6 @@ export class ProductList implements OnInit, OnDestroy {
   searchQuery: string = '';
   loading: boolean = true;
 
-  // Custom price ranges
   priceRanges: PriceRange[] = [
     { label: 'Under Rs. 1,000', min: 0, max: 1000 },
     { label: 'Rs. 1,000 - Rs. 5,000', min: 1000, max: 5000 },
@@ -46,31 +44,36 @@ export class ProductList implements OnInit, OnDestroy {
   activeImageMap: { [productId: number]: number } = {};
   private hoverIntervals: { [productId: number]: ReturnType<typeof setInterval> } = {};
 
-  ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.loadCategories();
-      
-      // Listen for Query Params updates from the Navbar Mega Menu
-      this.route.queryParams.subscribe((params) => {
-        if (params['categoryId'] !== undefined) {
-          this.selectedCategoryId = params['categoryId'] ? Number(params['categoryId']) : null;
-        }
+  constructor() {
+    // Automatically reacts to filter changes from Navbar or local controls without URL parameters
+    effect(() => {
+      const filters = this.productService.activeFilters();
 
-        const min = params['minPrice'] !== undefined ? Number(params['minPrice']) : null;
-        const max = params['maxPrice'] !== undefined ? Number(params['maxPrice']) : null;
+      if (isPlatformBrowser(this.platformId)) {
+        this.selectedCategoryId = filters.categoryId ?? null;
+        this.searchQuery = filters.search || '';
 
-        if (min !== null || max !== null) {
-          this.selectedPriceRange = {
+        if (filters.minPrice !== undefined || filters.maxPrice !== undefined) {
+          const min = filters.minPrice ?? 0;
+          const max = filters.maxPrice ?? null;
+          
+          this.selectedPriceRange = this.priceRanges.find(r => r.min === min && r.max === max) || {
             label: 'Navbar Selected Range',
-            min: min ?? 0,
-            max: max,
+            min: min,
+            max: max
           };
         } else {
           this.selectedPriceRange = null;
         }
 
         this.loadProducts();
-      });
+      }
+    });
+  }
+
+  ngOnInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadCategories();
     } else {
       this.loading = false;
     }
@@ -98,6 +101,7 @@ export class ProductList implements OnInit, OnDestroy {
       .subscribe({
         next: (data) => {
           this.products = data;
+          this.allProducts = data;
           this.loading = false;
         },
         error: (err) => {
@@ -107,30 +111,18 @@ export class ProductList implements OnInit, OnDestroy {
       });
   }
 
-  applyPriceFilter(): void {
-    if (!this.selectedPriceRange) {
-      this.products = [...this.allProducts];
-      return;
-    }
-
-    const { min, max } = this.selectedPriceRange;
-    this.products = this.allProducts.filter((product) => {
-      const minMatch = product.price >= min;
-      const maxMatch = max === null || product.price <= max;
-      return minMatch && maxMatch;
-    });
-  }
-
   onCategoryChange(): void {
-    this.loadProducts();
+    this.productService.setCategoryFilter(this.selectedCategoryId ?? undefined);
   }
 
   onPriceRangeChange(): void {
-    this.applyPriceFilter();
+    const min = this.selectedPriceRange?.min;
+    const max = this.selectedPriceRange?.max ?? undefined;
+    this.productService.setPriceFilter(min, max);
   }
 
   onSearchChange(): void {
-    this.loadProducts();
+    this.productService.activeFilters.update(f => ({ ...f, search: this.searchQuery }));
   }
 
   getSafeUrl(url: string): SafeUrl {
