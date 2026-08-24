@@ -39,7 +39,9 @@
           <!-- Left Column: Dynamic Categories -->
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Categories</h4>
-            <a style="cursor: pointer;" (click)="filterByCategory(undefined)">All Products</a>
+            
+            <!-- Updated to clear all filters -->
+            <a style="cursor: pointer;" (click)="clearAllFilters()">All Products</a>
             
             <a *ngFor="let category of categories()" style="cursor: pointer;" (click)="filterByCategory(category.id)">
               {{ category.name }}

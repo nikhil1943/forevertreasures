@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { Cart } from './services/cart';
 import { AuthService } from './services/auth';
@@ -17,6 +17,7 @@ export class App implements OnInit {
   private router = inject(Router);
   private productService = inject(ProductService);
   public authService = inject(AuthService);
+  private platformId = inject(PLATFORM_ID);
 
   totalCount = this.cartService.totalCount;
   isMobileMenuOpen = signal(false);
@@ -30,8 +31,25 @@ export class App implements OnInit {
   }
 
   loadCategories(): void {
+    const isBrowser = isPlatformBrowser(this.platformId);
+    
+    // Check cache first if in the browser
+    if (isBrowser) {
+      const cachedCategories = sessionStorage.getItem('ft_nav_categories');
+      if (cachedCategories) {
+        this.categories.set(JSON.parse(cachedCategories));
+        return; 
+      }
+    }
+
+    // Fetch from API if not cached
     this.productService.getCategories().subscribe({
-      next: (data) => this.categories.set(data),
+      next: (data) => {
+        this.categories.set(data);
+        if (isBrowser) {
+          sessionStorage.setItem('ft_nav_categories', JSON.stringify(data));
+        }
+      },
       error: (err) => console.error('Failed to load nav categories:', err)
     });
   }
@@ -45,6 +63,13 @@ export class App implements OnInit {
   filterByPrice(minPrice?: number, maxPrice?: number): void {
     this.closeMobileMenu();
     this.productService.setPriceFilter(minPrice, maxPrice);
+    this.router.navigate(['/products']);
+  }
+
+  // Removes ALL filters (Category, Price, and Search)
+  clearAllFilters(): void {
+    this.closeMobileMenu();
+    this.productService.resetFilters();
     this.router.navigate(['/products']);
   }
 
