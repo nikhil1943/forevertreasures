@@ -6,14 +6,14 @@
   width: 100%;
   z-index: 9999;
   
-  /* Translucent Dark Liquid Glass Tint */
-  background: rgba(10, 10, 10, 0.65);
+  /* Deepened Black Liquid Glass Tint for Higher Gold Contrast */
+  background: rgba(5, 5, 5, 0.90);
   backdrop-filter: blur(24px) saturate(200%);
   -webkit-backdrop-filter: blur(24px) saturate(200%);
   
-  /* Subtle Gold/Glass Highlight Edge */
+  /* Subtle Gold Highlight Edge */
   border-bottom: 1px solid rgba(212, 175, 55, 0.25);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
   transition: background 0.3s ease, backdrop-filter 0.3s ease;
 }
 
@@ -26,13 +26,31 @@
   align-items: center;
 }
 
-/* Gold Shimmer Logo & Tagline */
+/* Gold Shimmer Logo (Icon + Text Side-by-Side) */
 .gold-shimmer-logo {
   display: inline-flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
   text-decoration: none;
   z-index: 10001;
   cursor: pointer;
+}
+
+/* Square Logo Image (Aspect Ratio Locked) */
+.logo-img {
+  height: 46px;
+  width: 46px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  border-radius: 4px;
+  flex-shrink: 0;
+  display: block;
+}
+
+/* Vertical Text Column */
+.logo-text {
+  display: flex;
+  flex-direction: column;
 }
 
 .brand-title {
@@ -222,7 +240,7 @@
   padding: 0;
 }
 
-/* Mobile Media Queries (Mobile Screen Support) */
+/* Mobile Media Queries */
 @media (max-width: 768px) {
   .hamburger-btn {
     display: flex;
@@ -235,7 +253,7 @@
     width: 100%;
     height: 100vh;
     height: 100dvh;
-    background: rgba(8, 8, 8, 0.94);
+    background: rgba(4, 4, 4, 0.96);
     backdrop-filter: blur(28px) saturate(200%);
     -webkit-backdrop-filter: blur(28px) saturate(200%);
     flex-direction: column;
@@ -265,6 +283,21 @@
     margin-left: 0;
     margin-top: 1rem;
     gap: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .logo-img {
+    height: 38px;
+    width: 38px;
+  }
+
+  .brand-title {
+    font-size: 1.05rem;
+  }
+
+  .tagline {
+    font-size: 0.58rem;
   }
 }
 
