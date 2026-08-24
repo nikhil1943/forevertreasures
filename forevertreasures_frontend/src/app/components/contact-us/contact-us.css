@@ -1,18 +1,22 @@
+/* Main Page Container */
 .contact-container {
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
-  padding: 1rem 0;
+  padding: 6rem 1.5rem 3rem 1.5rem; /* 6rem top padding clears fixed navbar */
+  box-sizing: border-box;
 }
 
+/* Page Header */
 .contact-header {
   text-align: center;
   margin-bottom: 2.5rem;
 }
 
 .contact-header h1 {
-  font-size: 2rem;
+  font-size: 2.25rem;
   color: #0f172a;
   margin-bottom: 0.5rem;
+  font-weight: 700;
 }
 
 .contact-header p {
@@ -20,23 +24,28 @@
   font-size: 1rem;
 }
 
+/* 2-Column Side-by-Side Layout Grid */
 .contact-grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 2rem;
+  width: 100%;
 }
 
+/* Desktop View (Left: Info, Right: Form) */
 @media (min-width: 768px) {
   .contact-grid {
-    grid-template-columns: 1fr 1.5fr;
+    grid-template-columns: 1fr 1.4fr;
+    gap: 2.5rem;
+    align-items: start; /* Prevents card height distortion */
   }
 }
 
-/* Info Card */
+/* Left Column: Info Card */
 .info-card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
   height: fit-content;
@@ -48,6 +57,7 @@
   color: #0f172a;
   border-bottom: 1px solid #f1f5f9;
   padding-bottom: 0.75rem;
+  font-weight: 600;
 }
 
 .info-item {
@@ -57,29 +67,50 @@
   align-items: flex-start;
 }
 
-.info-item .icon {
+.info-item:last-child {
+  margin-bottom: 0;
+}
+
+.info-item .icon,
+.info-item .svg-icon {
   font-size: 1.2rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.2rem;
 }
 
 .info-item strong {
   display: block;
   font-size: 0.9rem;
   color: #0f172a;
+  margin-bottom: 0.2rem;
 }
 
 .info-item p {
   margin: 0;
   font-size: 0.9rem;
   color: #64748b;
+  line-height: 1.4;
 }
 
-/* Form Card */
+.info-item a {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.info-item a:hover {
+  opacity: 0.8;
+}
+
+/* Right Column: Form Card */
 .form-card {
   background-color: #ffffff;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border-radius: 12px;
   padding: 2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+  height: fit-content;
 }
 
 .success-banner {
@@ -114,6 +145,7 @@
   font-family: inherit;
   font-size: 0.95rem;
   box-sizing: border-box;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .form-group input:focus,
@@ -126,6 +158,7 @@
 .error {
   color: #dc2626;
   font-size: 0.8rem;
+  margin-top: 0.2rem;
 }
 
 .submit-btn {
@@ -143,21 +176,4 @@
 
 .submit-btn:hover {
   background-color: #1e293b;
-}
-
-
-
-.info-item .svg-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.info-item a {
-  color: inherit;
-  text-decoration: underline;
-}
-
-.info-item a:hover {
-  opacity: 0.8;
 }

@@ -24,6 +24,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 3rem; /* <--- Adds ample spacing between logo/tagline and navbar links */
 }
 
 /* Gold Shimmer Logo & Tagline */
