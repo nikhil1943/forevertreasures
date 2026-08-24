@@ -17,19 +17,24 @@ export class Cart {
   private cartItemsSignal = signal<CartItem[]>([]);
 
   constructor() {
-    // Only execute localStorage logic on the client/browser
     if (this.isBrowser) {
-      const savedCart = localStorage.getItem('cart_state');
-      if (savedCart) {
-        try {
+      // 1. Read stored cart safely on client only
+      try {
+        const savedCart = localStorage.getItem('cart_state');
+        if (savedCart) {
           this.cartItemsSignal.set(JSON.parse(savedCart));
-        } catch (e) {
-          console.error('Failed to load cart from local storage', e);
         }
+      } catch (e) {
+        console.error('Failed to load cart from local storage', e);
       }
 
+      // 2. Wrap effect inside platform check so build-time renderer bypasses it
       effect(() => {
-        localStorage.setItem('cart_state', JSON.stringify(this.cartItemsSignal()));
+        try {
+          localStorage.setItem('cart_state', JSON.stringify(this.cartItemsSignal()));
+        } catch (e) {
+          console.error('Failed to save cart to local storage', e);
+        }
       });
     }
   }
@@ -40,7 +45,6 @@ export class Cart {
     this.cartItemsSignal().reduce((sum, item) => sum + item.quantity, 0)
   );
 
-  // Cast price to Number to safely support string or numeric DB price values
   readonly totalPrice = computed(() => 
     this.cartItemsSignal().reduce((sum, item) => sum + (Number(item.product.price) * item.quantity), 0)
   );
