@@ -20,10 +20,11 @@
 .nav-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 1rem 1.5rem;
+  padding: 0.75rem 1.5rem; /* Slightly reduced top/bottom padding */
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 1.5rem;
 }
 
 /* Gold Shimmer Logo (Icon + Text Side-by-Side) */
@@ -31,6 +32,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
+  flex-shrink: 0; /* Prevents logo section from expanding or shrinking */
   text-decoration: none;
   z-index: 10001;
   cursor: pointer;
@@ -38,11 +40,10 @@
 
 /* Square Logo Image (Aspect Ratio Locked) */
 .logo-img {
-  height: 46px;
-  width: 46px;
+  height: 40px;
+  width: 40px;
   aspect-ratio: 1 / 1;
   object-fit: contain;
-  border-radius: 4px;
   flex-shrink: 0;
   display: block;
 }
@@ -82,8 +83,8 @@
 }
 
 .nav-links a,
-.gold-shimmer-logo,
 .cart-link {
+  white-space: nowrap; /* Stops multi-word links from breaking into 2 lines */
   cursor: pointer;
   text-decoration: none;
   position: relative;
