@@ -26,16 +26,34 @@
   align-items: center;
 }
 
-/* Gold Shimmer Logo */
+/* Gold Shimmer Logo & Tagline */
 .gold-shimmer-logo {
+  display: inline-flex;
+  flex-direction: column;
+  text-decoration: none;
+  z-index: 10001;
+  cursor: pointer;
+}
+
+.brand-title {
   font-family: 'Cinzel', serif;
   font-size: 1.25rem;
   font-weight: 700;
   color: #d4af37;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  text-decoration: none;
-  z-index: 10001;
+  line-height: 1.1;
+}
+
+.tagline {
+  font-family: 'Cinzel', serif;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #f3e5ab;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-top: 3px;
 }
 
 /* Nav Links & Typography */
