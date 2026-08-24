@@ -1,6 +1,6 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 import { environment } from '../../environments/prod/environment';
 
 export interface Category {
@@ -13,7 +13,7 @@ export interface Product {
   id: number;
   title: string;
   description: string;
-  price: number | string;
+  price: number;
   stock_quantity: number;
   image_urls: string[];
   is_visible: boolean;
@@ -26,8 +26,6 @@ export interface ProductFilters {
   categoryId?: number;
   minPrice?: number;
   maxPrice?: number;
-  page?: number;
-  limit?: number;
 }
 
 @Injectable({
@@ -37,56 +35,60 @@ export class ProductService {
   private http = inject(HttpClient);
   private apiUrl = environment.apiUrl;
 
-  activeFilters = signal<ProductFilters>({ page: 1, limit: 12 });
-  private productsCache = signal<Product[] | null>(null);
+  activeFilters = signal<ProductFilters>({});
 
   setCategoryFilter(categoryId?: number): void {
-    this.activeFilters.update(f => ({ ...f, categoryId, page: 1 }));
+    this.activeFilters.update(f => ({ ...f, categoryId }));
   }
 
   setPriceFilter(minPrice?: number, maxPrice?: number): void {
-    this.activeFilters.update(f => ({ ...f, minPrice, maxPrice, page: 1 }));
+    this.activeFilters.update(f => ({ ...f, minPrice, maxPrice }));
   }
 
-  setPage(page: number): void {
-    this.activeFilters.update(f => ({ ...f, page }));
+  setSearchFilter(search?: string): void {
+    this.activeFilters.update(f => ({ ...f, search }));
   }
 
-  clearCache(): void {
-    this.productsCache.set(null);
+  resetFilters(): void {
+    this.activeFilters.set({});
   }
 
   getProducts(
     search?: string,
     categoryId?: number,
     minPrice?: number,
-    maxPrice?: number,
-    page: number = 1,
-    limit: number = 12
-  ): Observable<any> {
+    maxPrice?: number
+  ): Observable<Product[]> {
     let params = new HttpParams();
 
-    if (page) params = params.set('page', page.toString());
-    if (limit) params = params.set('limit', limit.toString());
     if (search && search.trim() !== '') params = params.set('search', search.trim());
     if (categoryId !== undefined && categoryId !== null) params = params.set('category_id', categoryId.toString());
     if (minPrice !== undefined && minPrice !== null) params = params.set('min_price', minPrice.toString());
     if (maxPrice !== undefined && maxPrice !== null) params = params.set('max_price', maxPrice.toString());
 
-    return this.http.get<any>(`${this.apiUrl}/products`, { params }).pipe(
-      tap(data => {
-        if (!search && categoryId === undefined && minPrice === undefined && maxPrice === undefined && page === 1) {
-          this.productsCache.set(data);
-        }
+    return this.http.get<Product[]>(`${this.apiUrl}/products`, { params }).pipe(
+      map(res => {
+        const list: any[] = Array.isArray(res) ? res : (res as any)?.products || (res as any)?.data || [];
+        return list.map(p => ({
+          ...p,
+          price: Number(p.price) || 0
+        }));
       })
     );
   }
 
   getCategories(): Observable<Category[]> {
-    return this.http.get<Category[]>(`${this.apiUrl}/categories`);
+    return this.http.get<Category[]>(`${this.apiUrl}/categories`).pipe(
+      map(res => Array.isArray(res) ? res : (res as any)?.categories || (res as any)?.data || [])
+    );
   }
 
   getProductById(id: number): Observable<Product> {
-    return this.http.get<Product>(`${this.apiUrl}/products/${id}`);
+    return this.http.get<Product>(`${this.apiUrl}/products/${id}`).pipe(
+      map(p => ({
+        ...p,
+        price: Number(p.price) || 0
+      }))
+    );
   }
 }

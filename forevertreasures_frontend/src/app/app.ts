@@ -5,20 +5,6 @@ import { Cart } from './services/cart';
 import { AuthService } from './services/auth';
 import { ProductService, Category } from './services/product';
 
-// Universal helper to find an array inside any backend payload structure
-function extractArrayFromResponse<T>(data: any): T[] {
-  if (!data) return [];
-  if (Array.isArray(data)) return data;
-  if (typeof data === 'object') {
-    const keys = ['categories', 'data', 'items', 'results', 'rows', 'products'];
-    for (const key of keys) {
-      if (Array.isArray(data[key])) return data[key];
-    }
-    if (data.data) return extractArrayFromResponse<T>(data.data);
-  }
-  return [];
-}
-
 @Component({
   selector: 'app-root',
   standalone: true,
@@ -48,13 +34,8 @@ export class App implements OnInit {
 
   loadCategories(): void {
     this.productService.getCategories().subscribe({
-      next: (data) => {
-        console.log('[Navbar] Raw Categories API Response:', data);
-        const extracted = extractArrayFromResponse<Category>(data);
-        console.log('[Navbar] Extracted Categories:', extracted);
-        this.categories.set(extracted);
-      },
-      error: (err) => console.error('[Navbar] Failed to load categories:', err)
+      next: (data) => this.categories.set(data),
+      error: (err) => console.error('Failed to load nav categories:', err)
     });
   }
 

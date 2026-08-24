@@ -41,23 +41,19 @@
             <h4 class="menu-heading">Shop by Categories</h4>
             <a style="cursor: pointer;" (click)="filterByCategory(undefined)">All Products</a>
             
-            @for (category of categories(); track category.id) {
-              <a style="cursor: pointer;" (click)="filterByCategory(category.id)">
-                {{ category.name }}
-              </a>
-            } @empty {
-              <span class="menu-placeholder" style="color: #94a3b8; font-size: 0.875rem;">Loading categories...</span>
-            }
+            <a *ngFor="let category of categories()" style="cursor: pointer;" (click)="filterByCategory(category.id)">
+              {{ category.name }}
+            </a>
           </div>
 
           <!-- Right Column: Price Ranges -->
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Price</h4>
             <a style="cursor: pointer;" (click)="filterByPrice(0, 500)">Under Rs. 500</a>
-            <a style="cursor: pointer;" (click)="filterByPrice(500, 1100)">Under Rs. 1,100</a>
-            <a style="cursor: pointer;" (click)="filterByPrice(1100, 2100)">Under Rs. 2,100</a>
-            <a style="cursor: pointer;" (click)="filterByPrice(2100, 3500)">Under Rs. 3,500</a>
-            <a style="cursor: pointer;" (click)="filterByPrice(3500, 5000)">Under Rs. 5,000</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 1100)">Under Rs. 1,100</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 2100)">Under Rs. 2,100</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 3500)">Under Rs. 3,500</a>
+            <a style="cursor: pointer;" (click)="filterByPrice(0, 5000)">Under Rs. 5,000</a>
           </div>
         </div>
       </div>
