@@ -14,6 +14,7 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session, joinedload
 from cachetools import TTLCache # <-- New import for caching
+from sqlalchemy import func
 
 import models
 import schemas
@@ -592,7 +593,14 @@ def get_my_orders(db: Session = Depends(get_db), current_user: models.User = Dep
 
 @app.post("/api/reviews", response_model=schemas.ReviewResponse, status_code=status.HTTP_201_CREATED)
 def submit_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
-    new_review = models.Review(**review.model_dump())
+    # Find the current highest display_order so the new review goes to the end of the line
+    max_order = db.query(func.max(models.Review.display_order)).scalar()
+    next_order = (max_order or 0) + 1
+
+    new_review = models.Review(
+        **review.model_dump(),
+        display_order=next_order
+    )
     db.add(new_review)
     db.commit()
     db.refresh(new_review)
@@ -600,11 +608,35 @@ def submit_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
 
 @app.get("/api/reviews", response_model=List[schemas.ReviewResponse])
 def get_approved_reviews(db: Session = Depends(get_db)):
-    # Only fetches approved reviews, ordered by newest first
+    # Fetches approved reviews, ordering strictly by the custom display_order sequence.
+    # We use created_at as a secondary fallback sort.
     return db.query(models.Review)\
              .filter(models.Review.is_approved == True)\
-             .order_by(models.Review.created_at.desc())\
+             .order_by(models.Review.display_order.asc(), models.Review.created_at.desc())\
              .all()
+             
+@app.put("/api/admin/reviews/sequence")
+def update_review_sequence(
+    sequence: List[int], 
+    db: Session = Depends(get_db), 
+    current_user: models.User = Depends(get_current_user_from_token) 
+):
+    """
+    Takes an array of Review IDs in the desired order.
+    Assigns a display_order based on their index in the array.
+    """
+    try:
+        # Loop through the array. The index becomes the display_order (0, 1, 2, 3...)
+        for index, review_id in enumerate(sequence):
+            review = db.query(models.Review).filter(models.Review.id == review_id).first()
+            if review:
+                review.display_order = index
+                
+        db.commit()
+        return {"message": "Review sequence updated successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to update sequence")
 
 
 # ==========================================

@@ -13,8 +13,8 @@ import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/ad
 export class AdminComponent implements OnInit {
   adminService = inject(AdminService);
 
-  // Active Tab Navigation
-  activeTab = signal<'inventory' | 'orders' | 'categories' | 'hero'>('inventory');
+  // Active Tab Navigation (Added 'reviews' to the allowed types)
+  activeTab = signal<'inventory' | 'orders' | 'categories' | 'hero' | 'reviews'>('inventory');
 
   // Modal Display Signals
   showCategoryModal = signal<boolean>(false);
@@ -46,6 +46,7 @@ export class AdminComponent implements OnInit {
     display_order: 0,
     is_active: true
   };
+  editingSlide = signal<HeroMedia | null>(null);
   
   // Hero File Upload State
   uploadMode: 'FILE' | 'URL' = 'FILE';
@@ -59,6 +60,9 @@ export class AdminComponent implements OnInit {
   // Order Status Options
   statuses: AdminOrder['status'][] = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
 
+  // State Array for Review Sequencing
+  adminReviews: any[] = [];
+
   // Feedback Messages
   errorMessage = signal<string>('');
   successMessage = signal<string>('');
@@ -68,6 +72,9 @@ export class AdminComponent implements OnInit {
     this.adminService.loadProducts();
     this.adminService.loadOrders();
     this.adminService.loadHeroMedia();
+    
+    // Call the local component method to fetch and store reviews
+    this.loadReviews();
   }
 
   // ==========================================
@@ -149,19 +156,49 @@ export class AdminComponent implements OnInit {
   // HERO MEDIA OPERATIONS
   // ==========================================
 
+  editHeroSlide(slide: HeroMedia): void {
+    this.editingSlide.set(slide);
+    this.newSlide = { ...slide }; 
+    this.heroFilePreview = slide.media_url;
+    this.selectedHeroFile = null;
+    this.uploadMode = slide.media_url.startsWith('http') ? 'URL' : 'FILE';
+    
+    // Scroll to top where the form is
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  cancelEditHero(): void {
+    this.editingSlide.set(null);
+    this.resetSlideForm();
+  }
+
   submitHeroMedia(): void {
     if (!this.newSlide.media_url) {
       this.setErrorMessage('Please upload a media file or provide a valid URL.');
       return;
     }
 
-    this.adminService.createHeroMedia(this.newSlide).subscribe({
-      next: () => {
-        this.setSuccessMessage('Hero slide added successfully!');
-        this.resetSlideForm();
-      },
-      error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to save hero slide.')
-    });
+    const currentSlide = this.editingSlide();
+
+    if (currentSlide) {
+      // UPDATE EXISTING SLIDE
+      this.adminService.updateHeroMedia(currentSlide.id, this.newSlide).subscribe({
+        next: () => {
+          this.setSuccessMessage('Hero slide updated successfully!');
+          this.cancelEditHero();
+        },
+        error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to update hero slide.')
+      });
+    } else {
+      // CREATE NEW SLIDE
+      this.adminService.createHeroMedia(this.newSlide).subscribe({
+        next: () => {
+          this.setSuccessMessage('Hero slide added successfully!');
+          this.resetSlideForm();
+        },
+        error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to save hero slide.')
+      });
+    }
   }
 
   deleteHeroSlide(id: number): void {
@@ -323,6 +360,49 @@ export class AdminComponent implements OnInit {
     this.adminService.updateOrderStatus(id, status).subscribe({
       next: () => this.setSuccessMessage('Order status updated!'),
       error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to update order status.')
+    });
+  }
+
+  // ==========================================
+  // REVIEW OPERATIONS (Sequencing)
+  // ==========================================
+  
+  loadReviews(): void {
+    this.adminService.getReviews().subscribe({
+      next: (data) => {
+        this.adminReviews = data;
+      },
+      error: (err) => {
+        console.error('Failed to load admin reviews:', err);
+        this.setErrorMessage('Could not load reviews from server.');
+      }
+    });
+  }
+
+  moveReviewUp(index: number): void {
+    if (index > 0) {
+      const temp = this.adminReviews[index];
+      this.adminReviews[index] = this.adminReviews[index - 1];
+      this.adminReviews[index - 1] = temp;
+    }
+  }
+
+  moveReviewDown(index: number): void {
+    if (index < this.adminReviews.length - 1) {
+      const temp = this.adminReviews[index];
+      this.adminReviews[index] = this.adminReviews[index + 1];
+      this.adminReviews[index + 1] = temp;
+    }
+  }
+
+  saveReviewSequence(): void {
+    const sequencedIds = this.adminReviews.map(r => r.id);
+    this.adminService.updateReviewSequence(sequencedIds).subscribe({
+      next: () => this.setSuccessMessage('Review sequence updated successfully!'),
+      error: (err) => {
+        console.error(err);
+        this.setErrorMessage('Failed to update review sequence.');
+      }
     });
   }
 

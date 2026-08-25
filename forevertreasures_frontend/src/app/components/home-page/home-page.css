@@ -7,6 +7,13 @@
 }
 
 /* --- HERO SLIDESHOW --- */
+.hero-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain; /* Changes from cover to contain */
+  background-color: #000000; /* Fills the empty space cleanly */
+}
+
 .hero-section {
   position: relative;
   width: 100%;

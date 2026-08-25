@@ -14,11 +14,12 @@
         <button [class.active]="activeTab() === 'inventory'" (click)="activeTab.set('inventory')">Inventory</button>
         <button [class.active]="activeTab() === 'categories'" (click)="activeTab.set('categories')">Categories</button>
         <button [class.active]="activeTab() === 'orders'" (click)="activeTab.set('orders')">Orders</button>
-        <button [class.active]="activeTab() === 'hero'" (click)="activeTab.set('hero')">Slideshow Banners</button>
+        <button [class.active]="activeTab() === 'hero'" (click)="activeTab.set('hero')">Slideshow</button>
+        <button [class.active]="activeTab() === 'reviews'" (click)="activeTab.set('reviews')">Reviews</button>
       </div>
 
-      <!-- Hide these buttons when on the Hero tab -->
-      <div class="modal-buttons" *ngIf="activeTab() !== 'hero'">
+      <!-- Hide these buttons when on the Hero or Reviews tab -->
+      <div class="modal-buttons" *ngIf="activeTab() !== 'hero' && activeTab() !== 'reviews'">
         <button class="btn-primary" (click)="openAddCategoryModal()">+ New Category</button>
         <button class="btn-primary" (click)="openAddProductModal()">+ New Product</button>
       </div>
@@ -125,12 +126,40 @@
     </table>
   </section>
 
+  <!-- Reviews Sequencing Tab -->
+  <section *ngIf="activeTab() === 'reviews'" class="panel-section">
+    <div class="reviews-sequence-container">
+      <div class="flex-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h2>Manage Reviews Sequence</h2>
+        <button class="btn-primary" (click)="saveReviewSequence()">💾 Save Order</button>
+      </div>
+      
+      <div *ngIf="adminReviews.length === 0" style="color: #888; text-align: center; margin-top: 2rem;">
+        No reviews available to sequence.
+      </div>
+
+      <div class="sequence-list" style="display: flex; flex-direction: column; gap: 1rem;">
+        <div *ngFor="let review of adminReviews; let i = index" class="sequence-card" style="display: flex; gap: 1.5rem; padding: 1.5rem; background: #0a0a0a; border: 1px solid rgba(212,175,55,0.2); border-radius: 4px; align-items: center;">
+          <div class="sequence-controls" style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <button class="btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" (click)="moveReviewUp(i)" [disabled]="i === 0">▲</button>
+            <button class="btn-secondary" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;" (click)="moveReviewDown(i)" [disabled]="i === adminReviews.length - 1">▼</button>
+          </div>
+          <div class="review-details" style="flex: 1;">
+            <strong style="color: #d4af37; font-size: 1.1rem;">{{ review.customer_name }}</strong> 
+            <span style="color: #ccc; margin-left: 0.5rem;">- {{ review.rating }} Stars</span>
+            <p style="margin: 0.5rem 0 0 0; color: #fff;">"{{ review.comment }}"</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- Hero Banner Management Tab -->
   <section *ngIf="activeTab() === 'hero'" class="panel-section split-panel">
     
     <!-- Left Side: Form -->
     <div class="hero-form-container">
-      <h2 class="section-title">Add New Slide</h2>
+      <h2 class="section-title">{{ editingSlide() ? 'Edit Slide' : 'Add New Slide' }}</h2>
       <form (ngSubmit)="submitHeroMedia()">
         
         <div class="form-group">
@@ -156,7 +185,21 @@
             📁 Select Image or Video
             <input type="file" (change)="onHeroFileSelected($event)" accept="image/*,video/*" class="hidden-file-input" />
           </label>
-          <small *ngIf="uploadingFile" style="color:#d4af37; margin-top: 0.5rem;">Processing media file...</small>
+          <small *ngIf="uploadingFile" style="color:#d4af37; display: block; text-align: center; margin-top: 0.5rem;">Processing media file...</small>
+
+          <!-- Visual Feedback Preview -->
+          <div *ngIf="selectedHeroFile && !uploadingFile" class="file-preview-container" style="margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(212, 175, 55, 0.4); text-align: center;">
+            <p class="success-text" style="color: #4ade80; margin-bottom: 0.8rem;">✓ Selected: {{ selectedHeroFile.name }}</p>
+            <img *ngIf="heroFilePreview && newSlide.media_type === 'IMAGE'" [src]="heroFilePreview" class="admin-thumb-preview" style="max-height: 150px; border-radius: 4px;" />
+            <video *ngIf="heroFilePreview && newSlide.media_type === 'VIDEO'" [src]="heroFilePreview" class="admin-thumb-preview" style="max-height: 150px; border-radius: 4px;" muted autoplay loop></video>
+          </div>
+          
+          <!-- Existing Image Preview when editing -->
+          <div *ngIf="editingSlide() && heroFilePreview && !selectedHeroFile" class="file-preview-container" style="margin-top: 1rem; text-align: center;">
+            <p style="color: #aaa; margin-bottom: 0.5rem; font-size: 0.85rem;">Current Media:</p>
+            <img *ngIf="newSlide.media_type === 'IMAGE'" [src]="heroFilePreview" style="max-height: 150px; border-radius: 4px;" />
+            <video *ngIf="newSlide.media_type === 'VIDEO'" [src]="heroFilePreview" style="max-height: 150px; border-radius: 4px;" muted autoplay loop></video>
+          </div>
         </div>
 
         <div *ngIf="uploadMode === 'URL'" class="form-group">
@@ -189,8 +232,14 @@
           </div>
         </div>
 
-        <div class="modal-actions" style="margin-top: 1rem;">
-          <button type="submit" [disabled]="uploadingFile" class="btn-primary" style="width: 100%;">Add Slide to Homepage</button>
+        <div class="modal-actions" style="margin-top: 1rem; display: flex; gap: 1rem;">
+          <button type="submit" [disabled]="uploadingFile" class="btn-primary" style="flex: 1;">
+            {{ editingSlide() ? 'Update Slide' : 'Add Slide to Homepage' }}
+          </button>
+          
+          <button *ngIf="editingSlide()" type="button" class="btn-secondary" (click)="cancelEditHero()" style="flex: 1;">
+            Cancel Edit
+          </button>
         </div>
       </form>
     </div>
@@ -204,7 +253,7 @@
       </div>
 
       <div class="slides-list" *ngIf="adminService.heroMedia().length > 0">
-        <div *ngFor="let slide of adminService.heroMedia()" class="slide-item-card">
+        <div *ngFor="let slide of adminService.heroMedia()" class="slide-item-card" [class.editing-active]="editingSlide()?.id === slide.id">
           
           <div class="slide-preview">
             <img *ngIf="slide.media_type === 'IMAGE'" [src]="slide.media_url" [alt]="slide.title" />
@@ -219,6 +268,8 @@
           </div>
 
           <div class="slide-actions">
+            <!-- Edit Button Added -->
+            <button class="btn-sm btn-edit" (click)="editHeroSlide(slide)">Edit</button>
             <button class="btn-sm btn-delete" (click)="deleteHeroSlide(slide.id)">Delete</button>
           </div>
         </div>

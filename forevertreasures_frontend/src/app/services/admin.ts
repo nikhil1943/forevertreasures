@@ -168,9 +168,31 @@ export class AdminService {
     );
   }
 
+  updateHeroMedia(id: number, payload: Partial<HeroMedia>): Observable<HeroMedia> {
+    return this.http.put<HeroMedia>(`${this.apiUrl}/hero-media/${id}`, payload).pipe(
+      tap(() => this.loadHeroMedia())
+    );
+  }
+
   deleteHeroMedia(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/hero-media/${id}`).pipe(
       tap(() => this.loadHeroMedia())
     );
+  }
+
+  // ==========================================
+  // REVIEWS OPERATIONS
+  // ==========================================
+
+  // Adding the method to fetch reviews for the Admin sequencing tool
+  getReviews(): Observable<any[]> {
+    // Assuming your public reviews endpoint is located here. 
+    // If it's specifically under /admin, adjust the URL.
+    return this.http.get<any[]>(`${environment.apiUrl}/reviews`);
+  }
+
+  updateReviewSequence(sequence: number[]): Observable<any> {
+    // Expecting the backend to accept an array of IDs in their new order
+    return this.http.put(`${this.apiUrl}/reviews/sequence`, sequence);
   }
 }

@@ -15,7 +15,7 @@ import { FeedbackService, Review } from '../../services/feedback';
 })
 export class HomePage implements OnInit, OnDestroy {
   private productService = inject(ProductService);
-  private feedbackService = inject(FeedbackService); // Inject the new service
+  private feedbackService = inject(FeedbackService);
   private platformId = inject(PLATFORM_ID);
 
   heroMedia: HeroMedia[] = [];
@@ -24,19 +24,25 @@ export class HomePage implements OnInit, OnDestroy {
   
   // State array for the customer reviews
   reviews: Review[] = []; 
+  currentReviewIndex = 0;
+  private reviewAutoScrollTimer: any;
 
   currentSlideIndex = 0;
   private slideTimeout: any;
 
   ngOnInit(): void {
-    this.loadData();
+    // Wrap inside platform check to prevent Vercel build timeouts during SSR
+    if (isPlatformBrowser(this.platformId)) {
+      this.loadData();
+      this.startReviewAutoScroll(); // Start the testimonial carousel
+    }
   }
 
   loadData(): void {
     // 1. Load Hero Slides
     this.productService.getHeroMedia().subscribe(media => {
       this.heroMedia = media;
-      if (this.heroMedia.length > 0 && isPlatformBrowser(this.platformId)) {
+      if (this.heroMedia.length > 0) {
         this.startSlideTimer();
       }
     });
@@ -58,14 +64,53 @@ export class HomePage implements OnInit, OnDestroy {
     });
   }
 
-  // --- TESTIMONIALS LOGIC ---
+  // ==========================================
+  // TESTIMONIALS LOGIC
+  // ==========================================
   
-  // Helper to generate an array for the stars loop in HTML
   getStarsArray(rating: number): number[] {
     return Array(rating).fill(0);
   }
 
-  // --- SLIDESHOW LOGIC ---
+  startReviewAutoScroll(): void {
+    this.reviewAutoScrollTimer = setInterval(() => {
+      this.nextReview();
+    }, 5000); // Auto-scrolls every 5 seconds
+  }
+
+  stopReviewAutoScroll(): void {
+    if (this.reviewAutoScrollTimer) {
+      clearInterval(this.reviewAutoScrollTimer);
+    }
+  }
+
+  nextReview(): void {
+    if (this.reviews && this.reviews.length > 0) {
+      this.currentReviewIndex = (this.currentReviewIndex + 1) % this.reviews.length;
+    }
+  }
+
+  prevReview(): void {
+    if (this.reviews && this.reviews.length > 0) {
+      this.currentReviewIndex = (this.currentReviewIndex - 1 + this.reviews.length) % this.reviews.length;
+    }
+  }
+
+  manualNext(): void {
+    this.stopReviewAutoScroll();
+    this.nextReview();
+    this.startReviewAutoScroll();
+  }
+  
+  manualPrev(): void {
+    this.stopReviewAutoScroll();
+    this.prevReview();
+    this.startReviewAutoScroll();
+  }
+
+  // ==========================================
+  // SLIDESHOW LOGIC
+  // ==========================================
   
   startSlideTimer(): void {
     this.clearTimer();
@@ -105,5 +150,6 @@ export class HomePage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearTimer();
+    this.stopReviewAutoScroll(); // Clear intervals when leaving the homepage
   }
 }
