@@ -92,8 +92,9 @@
         
         <!-- Clickable Image Container (Dynamically Sized) -->
         <a [routerLink]="['/products', product.id]" class="product-image-container">
-          <img [src]="product.image_urls?.[0] || product.image_url || 'assets/logo.jpeg'" 
-               [alt]="product.title" class="product-image"/>
+          <!-- Removed the '?' and the singular 'product.image_url' -->
+          <img [src]="product.image_urls[0] || 'assets/logo.jpeg'" 
+              [alt]="product.title" class="product-image"/>
         </a>
         
         <!-- Details Below Image -->
