@@ -905,6 +905,14 @@ def delete_hero_media(media_id: int, db: Session = Depends(get_db)):
     return None
 
 
+@app.get("/health")
+def health_check():
+    """
+    Super lightweight endpoint to keep Render awake. 
+    Does not query the database, ensuring an instant 200 OK response.
+    """
+    return {"status": "healthy"}
+
 
 # --- Register All APIRouters ---
 app.include_router(auth_router)
