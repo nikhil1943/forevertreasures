@@ -14,9 +14,11 @@
         <button [class.active]="activeTab() === 'inventory'" (click)="activeTab.set('inventory')">Inventory</button>
         <button [class.active]="activeTab() === 'categories'" (click)="activeTab.set('categories')">Categories</button>
         <button [class.active]="activeTab() === 'orders'" (click)="activeTab.set('orders')">Orders</button>
+        <button [class.active]="activeTab() === 'hero'" (click)="activeTab.set('hero')">Hero Banners</button>
       </div>
 
-      <div class="modal-buttons">
+      <!-- Hide these buttons when on the Hero tab -->
+      <div class="modal-buttons" *ngIf="activeTab() !== 'hero'">
         <button class="btn-primary" (click)="openAddCategoryModal()">+ New Category</button>
         <button class="btn-primary" (click)="openAddProductModal()">+ New Product</button>
       </div>
@@ -122,6 +124,108 @@
       </tbody>
     </table>
   </section>
+
+  <!-- Hero Banner Management Tab -->
+  <section *ngIf="activeTab() === 'hero'" class="panel-section split-panel">
+    
+    <!-- Left Side: Form -->
+    <div class="hero-form-container">
+      <h2 class="section-title">Add New Slide</h2>
+      <form (ngSubmit)="submitHeroMedia()">
+        
+        <div class="form-group">
+          <label>Slide Title (Heading)</label>
+          <input type="text" [(ngModel)]="newSlide.title" name="title" placeholder="e.g. Royal Gold Collection" />
+        </div>
+
+        <div class="form-group">
+          <label>Subtitle / Tagline</label>
+          <input type="text" [(ngModel)]="newSlide.subtitle" name="subtitle" placeholder="e.g. Handcrafted with precision" />
+        </div>
+
+        <div class="form-group">
+          <label>Media Source Type</label>
+          <div class="toggle-group">
+            <button type="button" [class.selected]="uploadMode === 'FILE'" (click)="uploadMode = 'FILE'">Upload File</button>
+            <button type="button" [class.selected]="uploadMode === 'URL'" (click)="uploadMode = 'URL'">Direct URL</button>
+          </div>
+        </div>
+
+        <div *ngIf="uploadMode === 'FILE'" class="form-group">
+          <label class="file-input-label" style="text-align: center; margin-top: 0.5rem;">
+            📁 Select Image or Video
+            <input type="file" (change)="onHeroFileSelected($event)" accept="image/*,video/*" class="hidden-file-input" />
+          </label>
+          <small *ngIf="uploadingFile" style="color:#d4af37; margin-top: 0.5rem;">Processing media file...</small>
+        </div>
+
+        <div *ngIf="uploadMode === 'URL'" class="form-group">
+          <label>Media URL (Image or MP4 Video)</label>
+          <input type="text" [(ngModel)]="newSlide.media_url" name="media_url" placeholder="https://..." />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Media Type</label>
+            <select [(ngModel)]="newSlide.media_type" name="media_type" class="status-select">
+              <option value="IMAGE">Image</option>
+              <option value="VIDEO">Video</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Display Order</label>
+            <input type="number" [(ngModel)]="newSlide.display_order" name="display_order" />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>CTA Target Link</label>
+            <input type="text" [(ngModel)]="newSlide.cta_link" name="cta_link" placeholder="/products" />
+          </div>
+          <div class="form-group">
+            <label>CTA Button Text</label>
+            <input type="text" [(ngModel)]="newSlide.cta_text" name="cta_text" placeholder="Shop Now" />
+          </div>
+        </div>
+
+        <div class="modal-actions" style="margin-top: 1rem;">
+          <button type="submit" [disabled]="uploadingFile" class="btn-primary" style="width: 100%;">Add Slide to Homepage</button>
+        </div>
+      </form>
+    </div>
+
+    <!-- Right Side: List Preview -->
+    <div class="hero-list-container">
+      <h2 class="section-title">Active Slides ({{ adminService.heroMedia().length }})</h2>
+      
+      <div *ngIf="adminService.heroMedia().length === 0" style="color: #888; text-align: center; margin-top: 2rem;">
+        No custom slides. The default logo is currently active on the homepage.
+      </div>
+
+      <div class="slides-list" *ngIf="adminService.heroMedia().length > 0">
+        <div *ngFor="let slide of adminService.heroMedia()" class="slide-item-card">
+          
+          <div class="slide-preview">
+            <img *ngIf="slide.media_type === 'IMAGE'" [src]="slide.media_url" [alt]="slide.title" />
+            <video *ngIf="slide.media_type === 'VIDEO'" [src]="slide.media_url" muted></video>
+            <span class="media-type-badge">{{ slide.media_type }}</span>
+          </div>
+
+          <div class="slide-details">
+            <h4>{{ slide.title || '(No Title)' }}</h4>
+            <p class="subtitle">{{ slide.subtitle }}</p>
+            <p class="meta">Order: <strong>#{{ slide.display_order }}</strong></p>
+          </div>
+
+          <div class="slide-actions">
+            <button class="btn-sm btn-delete" (click)="deleteHeroSlide(slide.id)">Delete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <!-- Category Modal (Add & Edit) -->

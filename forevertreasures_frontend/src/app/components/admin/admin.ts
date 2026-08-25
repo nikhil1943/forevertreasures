@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService, AdminOrder, Category } from '../../services/admin';
+import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/admin';
 
 @Component({
   selector: 'app-admin',
@@ -14,7 +14,7 @@ export class AdminComponent implements OnInit {
   adminService = inject(AdminService);
 
   // Active Tab Navigation
-  activeTab = signal<'inventory' | 'orders' | 'categories'>('inventory');
+  activeTab = signal<'inventory' | 'orders' | 'categories' | 'hero'>('inventory');
 
   // Modal Display Signals
   showCategoryModal = signal<boolean>(false);
@@ -35,7 +35,21 @@ export class AdminComponent implements OnInit {
     category_id: null as number | null
   };
 
-  // Dynamic Image URLs List (Supports HTTP URLs and Base64 Data Strings)
+  // Hero Media Form State
+  newSlide: Partial<HeroMedia> = {
+    title: '',
+    subtitle: '',
+    media_url: '',
+    media_type: 'IMAGE',
+    cta_link: '/products',
+    cta_text: 'Shop Collection',
+    display_order: 0,
+    is_active: true
+  };
+  uploadMode: 'FILE' | 'URL' = 'FILE';
+  uploadingFile = false;
+
+  // Dynamic Image URLs List
   imageUrls: string[] = [''];
 
   // Order Status Options
@@ -49,6 +63,7 @@ export class AdminComponent implements OnInit {
     this.adminService.loadCategories();
     this.adminService.loadProducts();
     this.adminService.loadOrders();
+    this.adminService.loadHeroMedia();
   }
 
   // ==========================================
@@ -64,34 +79,22 @@ export class AdminComponent implements OnInit {
 
   private resetProductForm(): void {
     this.editingProduct.set(null);
-    this.newProduct = {
-      title: '',
-      description: '',
-      price: null,
-      stock_quantity: 0,
-      category_id: null
-    };
+    this.newProduct = { title: '', description: '', price: null, stock_quantity: 0, category_id: null };
     this.imageUrls = [''];
     this.errorMessage.set('');
   }
 
   private generateSlug(text: string): string {
-    return text
-      .toLowerCase()
-      .trim()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/[\s_-]+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    return text.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-').replace(/^-+|-+$/g, '');
   }
 
-  trackByIndex(index: number): number {
-    return index;
-  }
+  trackByIndex(index: number): number { return index; }
 
-  // Dynamic Image Input Helpers
-  addImageUrlInput(): void {
-    this.imageUrls.push('');
-  }
+  // ==========================================
+  // FILE UPLOAD HELPERS
+  // ==========================================
+
+  addImageUrlInput(): void { this.imageUrls.push(''); }
 
   removeImageUrlInput(index: number): void {
     if (this.imageUrls.length > 1) {
@@ -101,7 +104,6 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  // Direct Local Image File Upload (Converts to Base64)
   onFileSelected(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -110,11 +112,69 @@ export class AdminComponent implements OnInit {
     const reader = new FileReader();
 
     reader.onload = () => {
-      // Store Base64 string directly in imageUrls array
       this.imageUrls[index] = reader.result as string;
     };
-
     reader.readAsDataURL(file);
+  }
+
+  // File Upload specifically for Hero Media
+  onHeroFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    
+    const file = input.files[0];
+    
+    if (file.type.startsWith('video/')) {
+      this.newSlide.media_type = 'VIDEO';
+    } else if (file.type.startsWith('image/')) {
+      this.newSlide.media_type = 'IMAGE';
+    }
+
+    this.uploadingFile = true;
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.newSlide.media_url = reader.result as string;
+      this.uploadingFile = false;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ==========================================
+  // HERO MEDIA OPERATIONS
+  // ==========================================
+
+  submitHeroMedia(): void {
+    if (!this.newSlide.media_url) {
+      this.errorMessage.set('Please upload a media file or provide a valid URL.');
+      return;
+    }
+
+    this.adminService.createHeroMedia(this.newSlide).subscribe({
+      next: () => {
+        this.setSuccessMessage('Hero slide added successfully!');
+        this.resetSlideForm();
+      },
+      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to save hero slide.')
+    });
+  }
+
+  deleteHeroSlide(id: number): void {
+    if (!confirm('Are you sure you want to delete this hero slide?')) return;
+
+    this.adminService.deleteHeroMedia(id).subscribe({
+      next: () => this.setSuccessMessage('Hero slide deleted successfully!'),
+      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to delete slide.')
+    });
+  }
+
+  resetSlideForm(): void {
+    this.newSlide = {
+      title: '', subtitle: '', media_url: '', media_type: 'IMAGE',
+      cta_link: '/products', cta_text: 'Shop Collection', 
+      display_order: this.adminService.heroMedia().length, 
+      is_active: true
+    };
+    this.uploadMode = 'FILE';
   }
 
   // ==========================================
@@ -144,51 +204,28 @@ export class AdminComponent implements OnInit {
       this.errorMessage.set('Category name is required.');
       return;
     }
-
-    const slug = this.categorySlug.trim()
-      ? this.generateSlug(this.categorySlug)
-      : this.generateSlug(this.categoryName);
-
-    const payload = {
-      name: this.categoryName.trim(),
-      slug: slug
-    };
-
+    const slug = this.categorySlug.trim() ? this.generateSlug(this.categorySlug) : this.generateSlug(this.categoryName);
+    const payload = { name: this.categoryName.trim(), slug: slug };
     const currentCategory = this.editingCategory();
 
     if (currentCategory) {
       this.adminService.updateCategory(currentCategory.id, payload).subscribe({
-        next: () => {
-          this.setSuccessMessage('Category updated successfully!');
-          this.closeCategoryModal();
-        },
-        error: (err) => {
-          this.errorMessage.set(err.error?.detail || 'Failed to update category.');
-        }
+        next: () => { this.setSuccessMessage('Category updated successfully!'); this.closeCategoryModal(); },
+        error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to update category.')
       });
     } else {
       this.adminService.createCategory(payload).subscribe({
-        next: () => {
-          this.setSuccessMessage('Category created successfully!');
-          this.closeCategoryModal();
-        },
-        error: (err) => {
-          this.errorMessage.set(err.error?.detail || 'Failed to create category.');
-        }
+        next: () => { this.setSuccessMessage('Category created successfully!'); this.closeCategoryModal(); },
+        error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to create category.')
       });
     }
   }
 
   deleteCategory(id: number): void {
     if (!confirm('Are you sure you want to delete this category?')) return;
-
     this.adminService.deleteCategory(id).subscribe({
-      next: () => {
-        this.setSuccessMessage('Category deleted successfully!');
-      },
-      error: (err) => {
-        this.errorMessage.set(err.error?.detail || 'Failed to delete category.');
-      }
+      next: () => this.setSuccessMessage('Category deleted successfully!'),
+      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to delete category.')
     });
   }
 
@@ -204,14 +241,10 @@ export class AdminComponent implements OnInit {
   openEditProductModal(product: any): void {
     this.editingProduct.set(product);
     this.newProduct = {
-      title: product.title || '',
-      description: product.description || '',
-      price: product.price || null,
-      stock_quantity: product.stock_quantity || 0,
-      category_id: product.category_id || null
+      title: product.title || '', description: product.description || '',
+      price: product.price || null, stock_quantity: product.stock_quantity || 0, category_id: product.category_id || null
     };
 
-    // Load existing image URLs/base64 strings or default to 1 empty field
     if (product.images && Array.isArray(product.images) && product.images.length > 0) {
       this.imageUrls = [...product.images];
     } else if (product.image_url) {
@@ -235,59 +268,33 @@ export class AdminComponent implements OnInit {
       return;
     }
 
-    const cleanedImages = this.imageUrls
-      .map(url => url.trim())
-      .filter(url => url.length > 0);
-
+    const cleanedImages = this.imageUrls.map(url => url.trim()).filter(url => url.length > 0);
     const payload = {
-      title: this.newProduct.title,
-      description: this.newProduct.description,
-      price: Number(this.newProduct.price),
-      stock_quantity: Number(this.newProduct.stock_quantity) || 0,
-      category_id: Number(this.newProduct.category_id),
-      images: cleanedImages
+      title: this.newProduct.title, description: this.newProduct.description,
+      price: Number(this.newProduct.price), stock_quantity: Number(this.newProduct.stock_quantity) || 0,
+      category_id: Number(this.newProduct.category_id), images: cleanedImages
     };
 
     const currentProduct = this.editingProduct();
 
     if (currentProduct) {
-      // PUT API Request for Update
       this.adminService.updateProduct(currentProduct.id, payload as any).subscribe({
-        next: () => {
-          this.setSuccessMessage('Product updated successfully!');
-          this.closeProductModal();
-          this.adminService.loadProducts();
-        },
-        error: (err) => {
-          this.errorMessage.set(err.error?.detail || 'Failed to update product.');
-        }
+        next: () => { this.setSuccessMessage('Product updated successfully!'); this.closeProductModal(); },
+        error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to update product.')
       });
     } else {
-      // POST API Request for Create
       this.adminService.createProduct(payload as any).subscribe({
-        next: () => {
-          this.setSuccessMessage('Product created successfully!');
-          this.closeProductModal();
-          this.adminService.loadProducts();
-        },
-        error: (err) => {
-          this.errorMessage.set(err.error?.detail || 'Failed to create product.');
-        }
+        next: () => { this.setSuccessMessage('Product created successfully!'); this.closeProductModal(); },
+        error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to create product.')
       });
     }
   }
 
   deleteProduct(id: number): void {
     if (!confirm('Are you sure you want to delete this product?')) return;
-
     this.adminService.deleteProduct(id).subscribe({
-      next: () => {
-        this.setSuccessMessage('Product deleted successfully!');
-        this.adminService.loadProducts();
-      },
-      error: (err) => {
-        this.errorMessage.set(err.error?.detail || 'Failed to delete product.');
-      }
+      next: () => this.setSuccessMessage('Product deleted successfully!'),
+      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to delete product.')
     });
   }
 

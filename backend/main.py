@@ -791,6 +791,50 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
     return {"status": "success"}
 
 
+hero_media_cache = TTLCache(maxsize=5, ttl=300)
+
+
+@app.get("/api/hero-media", response_model=List[schemas.HeroMediaResponse])
+def get_public_hero_media(db: Session = Depends(get_db)):
+    cache_key = "active_hero_media"
+    
+    if cache_key in hero_media_cache:
+        return hero_media_cache[cache_key]
+        
+    media = db.query(models.HeroMedia)\
+              .filter(models.HeroMedia.is_active == True)\
+              .order_by(models.HeroMedia.display_order.asc())\
+              .all()
+              
+    hero_media_cache[cache_key] = media
+    return media
+
+
+@admin_router.get("/hero-media", response_model=List[schemas.HeroMediaResponse])
+def get_admin_hero_media(db: Session = Depends(get_db)):
+    return db.query(models.HeroMedia).order_by(models.HeroMedia.display_order.asc()).all()
+
+@admin_router.post("/hero-media", response_model=schemas.HeroMediaResponse, status_code=status.HTTP_201_CREATED)
+def create_hero_media(payload: schemas.HeroMediaCreate, db: Session = Depends(get_db)):
+    new_media = models.HeroMedia(**payload.model_dump())
+    db.add(new_media)
+    db.commit()
+    db.refresh(new_media)
+    hero_media_cache.clear()
+    return new_media
+
+@admin_router.delete("/hero-media/{media_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_hero_media(media_id: int, db: Session = Depends(get_db)):
+    media = db.query(models.HeroMedia).filter(models.HeroMedia.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    db.delete(media)
+    db.commit()
+    hero_media_cache.clear()
+    return None
+
+
+
 # --- Register All APIRouters ---
 app.include_router(auth_router)
 app.include_router(payment_router)

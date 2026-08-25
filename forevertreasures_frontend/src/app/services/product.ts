@@ -28,6 +28,19 @@ export interface ProductFilters {
   maxPrice?: number;
 }
 
+
+export interface HeroMedia {
+  id: number;
+  title?: string;
+  subtitle?: string;
+  media_url: string;
+  media_type: 'IMAGE' | 'VIDEO';
+  cta_link?: string;
+  cta_text?: string;
+  display_order: number;
+  is_active: boolean;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -116,5 +129,12 @@ export class ProductService {
         return of({} as Product); 
       })
     );
+  }
+
+  getHeroMedia(): Observable<HeroMedia[]> {
+  return this.http.get<HeroMedia[]>(`${this.apiUrl}/hero-media`).pipe(
+    map(res => Array.isArray(res) ? res : []),
+    catchError(() => of([]))
+  );
   }
 }

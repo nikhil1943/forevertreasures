@@ -1,3 +1,107 @@
-<div class="hero-container">
-  <img [src]="logoPath" alt="Forever Treasures Logo" class="hero-logo" />
+<div class="homepage-wrapper">
+  
+  <!-- 1. HERO SLIDESHOW -->
+  <section class="hero-section">
+    <!-- Fallback if no media exists in DB yet -->
+    <div *ngIf="heroMedia.length === 0" class="hero-placeholder">
+      <img src="assets/logo.jpeg" alt="Forever Treasures" class="hero-logo-fallback" />
+    </div>
+
+    <!-- Dynamic Slides -->
+    <div *ngFor="let slide of heroMedia; let i = index" 
+         class="hero-slide" 
+         [class.active]="i === currentSlideIndex">
+      
+      <!-- Video Background -->
+      <video *ngIf="slide.media_type === 'VIDEO'" 
+             [src]="slide.media_url" 
+             autoplay muted playsinline 
+             (ended)="onVideoEnded()"
+             class="media-bg"></video>
+             
+      <!-- Image Background -->
+      <img *ngIf="slide.media_type === 'IMAGE'" 
+           [src]="slide.media_url" 
+           [alt]="slide.title" 
+           class="media-bg" />
+
+      <!-- Text & CTA Overlay -->
+      <div class="hero-overlay" *ngIf="slide.title || slide.subtitle">
+        <h1 *ngIf="slide.title" class="hero-title">{{ slide.title }}</h1>
+        <p *ngIf="slide.subtitle" class="hero-subtitle">{{ slide.subtitle }}</p>
+        <a *ngIf="slide.cta_link" [routerLink]="slide.cta_link" class="hero-cta-btn">
+          {{ slide.cta_text }}
+        </a>
+      </div>
+    </div>
+
+    <!-- Slider Controls -->
+    <div class="slider-controls" *ngIf="heroMedia.length > 1">
+      <button class="nav-btn prev" (click)="prevSlide()">&#10094;</button>
+      <button class="nav-btn next" (click)="nextSlide()">&#10095;</button>
+    </div>
+    
+    <div class="slider-dots" *ngIf="heroMedia.length > 1">
+      <span *ngFor="let slide of heroMedia; let i = index" 
+            class="dot" 
+            [class.active]="i === currentSlideIndex"
+            (click)="setSlide(i)"></span>
+    </div>
+  </section>
+
+  <!-- 2. TRUST BADGES -->
+  <section class="trust-badges">
+    <div class="badge">
+      <span class="icon">✦</span>
+      <p>Premium Quality</p>
+    </div>
+    <div class="badge">
+      <span class="icon">🛡️</span>
+      <p>Certified Authentic</p>
+    </div>
+    <div class="badge">
+      <span class="icon">✈️</span>
+      <p>Express Shipping</p>
+    </div>
+    <div class="badge">
+      <span class="icon">🔄</span>
+      <p>Easy Returns</p>
+    </div>
+  </section>
+
+  <!-- 3. SHOP BY CATEGORY -->
+  <section class="categories-section" *ngIf="categories.length > 0">
+    <h2 class="section-heading">Curated Collections</h2>
+    <div class="category-grid">
+      <a *ngFor="let cat of categories" [routerLink]="['/products']" [queryParams]="{ category_id: cat.id }" class="category-card">
+        <div class="cat-content">
+          <h3>{{ cat.name }}</h3>
+          <span class="explore-link">Explore</span>
+        </div>
+      </a>
+    </div>
+  </section>
+
+  <!-- 4. FEATURED TREASURES -->
+  <section class="featured-section" *ngIf="featuredProducts.length > 0">
+    <h2 class="section-heading">Featured Treasures</h2>
+    
+    <!-- Reuse your existing product list CSS structures here if desired -->
+    <div class="product-grid">
+      <div *ngFor="let product of featuredProducts" class="product-card">
+        <a [routerLink]="['/products', product.id]" class="image-container">
+          <img [src]="product.image_urls?.[0] || 'https://via.placeholder.com/300?text=No+Image'" 
+               [alt]="product.title" class="slide-image"/>
+        </a>
+        <div class="product-info">
+          <h3 class="product-title"><a [routerLink]="['/products', product.id]">{{ product.title }}</a></h3>
+          <p class="product-price">Rs. {{ product.price.toFixed(2) }}</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="view-all-container">
+      <a routerLink="/products" class="view-all-btn">View Full Collection</a>
+    </div>
+  </section>
 </div>

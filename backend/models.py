@@ -115,4 +115,15 @@ class RefreshToken(Base):
     
     
     
-    
+class HeroMedia(Base):
+    __tablename__ = "hero_media"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=True)
+    subtitle = Column(String(255), nullable=True)
+    media_url = Column(Text, nullable=False) # URL or Base64
+    media_type = Column(String(20), nullable=False, default="IMAGE") # 'IMAGE' or 'VIDEO'
+    cta_link = Column(String(255), nullable=True)
+    cta_text = Column(String(50), default="Shop Now")
+    display_order = Column(Integer, default=0, index=True)
+    is_active = Column(Boolean, default=True, index=True)

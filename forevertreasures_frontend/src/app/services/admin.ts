@@ -39,6 +39,18 @@ export interface ProductPayload {
   images?: string[];
 }
 
+export interface HeroMedia {
+  id: number;
+  title?: string;
+  subtitle?: string;
+  media_url: string;
+  media_type: 'IMAGE' | 'VIDEO';
+  cta_link?: string;
+  cta_text?: string;
+  display_order: number;
+  is_active: boolean;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private http = inject(HttpClient);
@@ -48,6 +60,7 @@ export class AdminService {
   products = signal<AdminProduct[]>([]);
   categories = signal<Category[]>([]);
   orders = signal<AdminOrder[]>([]);
+  heroMedia = signal<HeroMedia[]>([]);
 
   // ==========================================
   // CATEGORY OPERATIONS
@@ -55,14 +68,11 @@ export class AdminService {
 
   loadCategories(): void {
     this.http.get<Category[]>(`${this.apiUrl}/categories`).pipe(
-      // VERCEL FIX: Catch error if backend is asleep during build
       catchError((error) => {
         console.warn('Admin categories fetch failed:', error.message);
         return of([]);
       })
-    ).subscribe(data => {
-      this.categories.set(data);
-    });
+    ).subscribe(data => this.categories.set(data));
   }
 
   createCategory(payload: { name: string; slug?: string }): Observable<Category> {
@@ -89,14 +99,11 @@ export class AdminService {
 
   loadProducts(): void {
     this.http.get<AdminProduct[]>(`${this.apiUrl}/products`).pipe(
-      // VERCEL FIX: Catch error if backend is asleep during build
       catchError((error) => {
         console.warn('Admin products fetch failed:', error.message);
         return of([]);
       })
-    ).subscribe(data => {
-      this.products.set(data);
-    });
+    ).subscribe(data => this.products.set(data));
   }
 
   createProduct(payload: ProductPayload): Observable<AdminProduct> {
@@ -129,19 +136,41 @@ export class AdminService {
 
   loadOrders(): void {
     this.http.get<AdminOrder[]>(`${this.apiUrl}/orders`).pipe(
-      // VERCEL FIX: Catch error if backend is asleep during build
       catchError((error) => {
         console.warn('Admin orders fetch failed:', error.message);
         return of([]);
       })
-    ).subscribe(data => {
-      this.orders.set(data);
-    });
+    ).subscribe(data => this.orders.set(data));
   }
 
   updateOrderStatus(id: number, status: string): Observable<AdminOrder> {
     return this.http.patch<AdminOrder>(`${this.apiUrl}/orders/${id}/status`, { status }).pipe(
       tap(() => this.loadOrders())
+    );
+  }
+
+  // ==========================================
+  // HERO MEDIA OPERATIONS
+  // ==========================================
+
+  loadHeroMedia(): void {
+    this.http.get<HeroMedia[]>(`${this.apiUrl}/hero-media`).pipe(
+      catchError((error) => {
+        console.warn('Admin hero media fetch failed:', error.message);
+        return of([]);
+      })
+    ).subscribe(data => this.heroMedia.set(data));
+  }
+
+  createHeroMedia(payload: Partial<HeroMedia>): Observable<HeroMedia> {
+    return this.http.post<HeroMedia>(`${this.apiUrl}/hero-media`, payload).pipe(
+      tap(() => this.loadHeroMedia())
+    );
+  }
+
+  deleteHeroMedia(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/hero-media/${id}`).pipe(
+      tap(() => this.loadHeroMedia())
     );
   }
 }

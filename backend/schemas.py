@@ -137,3 +137,22 @@ class CreatePaymentIntentRequest(BaseModel):
 
 class PaymentIntentResponse(BaseModel):
     clientSecret: str
+
+
+# --- Hero Media Schemas ---
+class HeroMediaBase(BaseModel):
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    media_url: str
+    media_type: str = "IMAGE"
+    cta_link: Optional[str] = None
+    cta_text: Optional[str] = "Shop Now"
+    display_order: int = 0
+    is_active: bool = True
+
+class HeroMediaCreate(HeroMediaBase):
+    pass
+
+class HeroMediaResponse(HeroMediaBase):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
