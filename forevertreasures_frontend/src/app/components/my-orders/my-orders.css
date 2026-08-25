@@ -1,0 +1,245 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background-color: #000000;
+  color: #ffffff;
+  padding: 120px 5% 60px 5%; /* Accounts for fixed navbar */
+}
+
+.my-orders-wrapper {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+/* --- HEADERS & TEXT --- */
+.header-section {
+  text-align: center;
+  margin-bottom: 3rem;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+  padding-bottom: 1.5rem;
+}
+
+.page-title {
+  font-family: 'Cinzel', serif;
+  color: #d4af37;
+  font-size: 2.5rem;
+  margin: 0 0 0.5rem 0;
+  letter-spacing: 2px;
+}
+
+.page-subtitle {
+  color: #aaa;
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* --- STATES (Loading, Error, Empty) --- */
+.loading-state, .error-banner, .empty-state-card {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: #0a0a0a;
+  border: 1px solid rgba(212, 175, 55, 0.2);
+  border-radius: 4px;
+}
+
+.error-banner {
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.empty-state-card h2 {
+  font-family: 'Cinzel', serif;
+  color: #d4af37;
+  margin-bottom: 0.5rem;
+}
+
+.empty-state-card p {
+  color: #aaa;
+  margin-bottom: 2rem;
+}
+
+/* --- BUTTONS --- */
+.btn-primary {
+  display: inline-block;
+  background: #d4af37;
+  color: #000000;
+  border: none;
+  padding: 0.85rem 2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  border-radius: 2px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.btn-primary:hover {
+  background: #f3e5ab;
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: #ccc;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 0.5rem 1rem;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: 0.3s ease;
+}
+
+.btn-secondary:hover {
+  border-color: #d4af37;
+  color: #d4af37;
+}
+
+/* --- ORDERS GRID & CARDS --- */
+.orders-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+.order-card {
+  background: #0a0a0a;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  transition: border-color 0.3s ease, transform 0.3s ease;
+}
+
+.order-card:hover {
+  border-color: rgba(212, 175, 55, 0.5);
+}
+
+.order-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.2rem 1.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.order-id-group .label {
+  display: block;
+  font-size: 0.75rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 0.2rem;
+}
+
+.order-id-group .value {
+  font-family: monospace;
+  font-size: 1.2rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.order-body {
+  padding: 1.5rem;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  font-size: 0.95rem;
+}
+
+.detail-row .label {
+  color: #aaa;
+}
+
+.detail-row .value {
+  color: #fff;
+  font-weight: 500;
+}
+
+.gold-text {
+  color: #d4af37 !important;
+  font-size: 1.1rem;
+}
+
+.order-items {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+.items-title {
+  margin: 0 0 0.5rem 0;
+  font-size: 0.85rem;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.order-items ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+  color: #ccc;
+  font-size: 0.9rem;
+}
+
+.order-items li {
+  margin-bottom: 0.3rem;
+}
+
+.order-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* --- STATUS BADGES --- */
+.status-badge {
+  padding: 0.4rem 0.8rem;
+  border-radius: 2px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  border: 1px solid transparent;
+}
+
+.status-badge[data-status="Pending"] {
+  background: rgba(250, 204, 21, 0.1);
+  color: #facc15;
+  border-color: rgba(250, 204, 21, 0.3);
+}
+
+.status-badge[data-status="Processing"] {
+  background: rgba(56, 189, 248, 0.1);
+  color: #38bdf8;
+  border-color: rgba(56, 189, 248, 0.3);
+}
+
+.status-badge[data-status="Shipped"] {
+  background: rgba(96, 165, 250, 0.1);
+  color: #60a5fa;
+  border-color: rgba(96, 165, 250, 0.3);
+}
+
+.status-badge[data-status="Delivered"] {
+  background: rgba(74, 222, 128, 0.1);
+  color: #4ade80;
+  border-color: rgba(74, 222, 128, 0.3);
+}
+
+.status-badge[data-status="Cancelled"] {
+  background: rgba(248, 113, 113, 0.1);
+  color: #f87171;
+  border-color: rgba(248, 113, 113, 0.3);
+}

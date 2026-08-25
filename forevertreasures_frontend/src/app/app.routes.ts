@@ -13,6 +13,7 @@ import { LoginComponent } from './components/login/login';
 // Import your guards (Adjust the path if you added authGuard/guestGuard to the same admin-guard file)
 import { adminGuard } from './guards/admin-guard';
 import { authGuard, guestGuard } from './guards/auth-guard'; 
+import { MyOrdersComponent } from './components/my-orders/my-orders';
 
 export const routes: Routes = [
   // --- DEFAULT ROUTE ---
@@ -48,6 +49,8 @@ export const routes: Routes = [
     component: OrderConfirmationComponent,
     canActivate: [authGuard]
   },
+
+  { path: 'my-orders', component: MyOrdersComponent, canActivate: [authGuard] },
 
   // --- ADMIN PORTAL (Requires Admin Role) ---
   { 

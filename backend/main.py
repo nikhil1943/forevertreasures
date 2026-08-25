@@ -568,6 +568,24 @@ def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
     return product
 
 
+@app.get("/api/orders/my-orders")
+def get_my_orders(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user_from_token)):
+    # Fetch orders belonging to the logged-in user, newest first
+    orders = db.query(models.Order)\
+               .filter(models.Order.user_id == current_user.id)\
+               .order_by(models.Order.created_at.desc())\
+               .all()
+    
+    # Map the database model to match the Angular interface expectations
+    return [
+        {
+            "id": order.id,
+            "date": order.created_at,
+            "total_amount": order.total,
+            "status": order.status
+        } for order in orders
+    ]
+
 # ==========================================
 # FEEDBACK MANAGEMENT LOGIC (/api/reviews)
 # ==========================================

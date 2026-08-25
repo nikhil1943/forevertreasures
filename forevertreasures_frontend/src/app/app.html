@@ -65,6 +65,11 @@
       <a *ngIf="authService.isAdmin()" routerLink="/admin" (click)="closeMobileMenu()" routerLinkActive="active" class="admin-nav-link">
         ⚡ Portal
       </a>
+
+      <!-- NEW: My Orders Link (Only visible if logged in) -->
+      <a *ngIf="authService.isLoggedIn()" routerLink="/my-orders" (click)="closeMobileMenu()" routerLinkActive="active" class="orders-nav-link">
+        📦 My Orders
+      </a>
       
       <button *ngIf="authService.isLoggedIn()" (click)="handleCartClick()" class="cart-link">
         🛒 Cart

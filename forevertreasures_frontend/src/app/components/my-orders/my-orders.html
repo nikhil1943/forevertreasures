@@ -1,0 +1,70 @@
+<div class="my-orders-wrapper">
+  
+  <div class="header-section">
+    <h1 class="page-title">Order History</h1>
+    <p class="page-subtitle">Track and manage your recent purchases.</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-state">
+    <p>Loading your orders...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="errorMessage" class="error-banner">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!isLoading && orders.length === 0 && !errorMessage" class="empty-state-card">
+    <div class="empty-icon">🛍️</div>
+    <h2>No Orders Yet</h2>
+    <p>You haven't placed any orders with us. Discover your next forever treasure today.</p>
+    <a routerLink="/products" class="btn-primary">Explore Collection</a>
+  </div>
+
+  <!-- Orders Grid -->
+  <div class="orders-grid" *ngIf="!isLoading && orders.length > 0">
+    
+    <div *ngFor="let order of orders" class="order-card">
+      <div class="order-header">
+        <div class="order-id-group">
+          <span class="label">Order Number</span>
+          <span class="value">#{{ order.id }}</span>
+        </div>
+        <div class="order-status-group">
+          <span class="status-badge" [attr.data-status]="order.status">
+            {{ order.status }}
+          </span>
+        </div>
+      </div>
+
+      <div class="order-body">
+        <div class="detail-row">
+          <span class="label">Date Placed:</span>
+          <span class="value">{{ order.date | date:'mediumDate' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">Total Amount:</span>
+          <span class="value gold-text">₹{{ order.total_amount | number:'1.2-2' }}</span>
+        </div>
+
+        <!-- Optional: If your API returns the items inside the order -->
+        <div class="order-items" *ngIf="order.items && order.items.length > 0">
+          <h4 class="items-title">Items:</h4>
+          <ul>
+            <li *ngFor="let item of order.items">
+              {{ item.quantity }}x {{ item.name }}
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="order-footer">
+        <!-- Optional button to view full receipt or track shipping -->
+        <button class="btn-secondary">Need Help?</button>
+      </div>
+    </div>
+
+  </div>
+</div>
