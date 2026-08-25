@@ -7,22 +7,25 @@
 }
 
 /* --- HERO SLIDESHOW --- */
-.hero-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; /* Changes from cover to contain */
-  background-color: #000000; /* Fills the empty space cleanly */
-}
-
 .hero-section {
   position: relative;
   width: 100%;
-  height: 60vh; /* Restricted height so it doesn't take up the whole screen */
-  min-height: 400px;
-  max-height: 700px;
+  height: auto; 
+  /* 
+    This locks the container to a 16:9 widescreen ratio (standard horizontal). 
+    Change to 21/9 for ultra-wide, or 4/3 if your images are a bit taller. 
+  */
+  aspect-ratio: 16 / 9; 
   background-color: #000000;
   overflow: hidden;
   border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+}
+
+/* Mobile Hero Sizing: Prevents the slideshow from being too skinny on phones */
+@media (max-width: 768px) {
+  .hero-section {
+    aspect-ratio: 1 / 1; /* Makes it a square on mobile for better vertical screen usage */
+  }
 }
 
 .hero-placeholder {
@@ -64,9 +67,10 @@
 .media-bg {
   width: 100%;
   height: 100%;
-  object-fit: cover; /* Forces images/video to fill the constrained container without stretching */
+  object-fit: contain; /* ✅ GUARANTEES ZERO CROPPING */
   object-position: center;
   filter: brightness(0.65);
+  background-color: #000000; /* Fills empty space with black seamlessly */
 }
 
 .hero-overlay {
@@ -227,7 +231,7 @@
 .cat-content h3 { font-family: 'Cinzel', serif; font-size: 1.3rem; margin-bottom: 0.5rem; color: #d4af37; }
 .explore-link { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: #d4af37; }
 
-/* --- FEATURED PRODUCTS GRID (Fix for oversized images) --- */
+/* --- FEATURED PRODUCTS GRID --- */
 .featured-section {
   padding: 0 5% 5rem;
 }
@@ -253,16 +257,14 @@
   transform: translateY(-5px);
 }
 
-/* Forces the image container into a perfect square, stopping vertical stretching */
 .product-image-container {
   display: block;
   width: 100%;
   aspect-ratio: 1 / 1; 
   overflow: hidden;
-  background: #111; /* Dark fallback background while loading */
+  background: #111;
 }
 
-/* Forces the image to fill the square perfectly without distortion */
 .product-image {
   width: 100%;
   height: 100%;
@@ -274,7 +276,6 @@
   transform: scale(1.05);
 }
 
-/* Product Text Information */
 .product-info {
   padding: 1.2rem;
   text-align: center;
@@ -344,15 +345,15 @@
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
 }
 
 .reviews-track::-webkit-scrollbar {
-  display: none; /* Hide scrollbar for Chrome, Safari */
+  display: none; 
 }
 
 .review-card {
-  flex: 0 0 auto; /* Prevents cards from shrinking */
+  flex: 0 0 auto; 
   width: 350px;
   background: #0a0a0a;
   border: 1px solid rgba(212, 175, 55, 0.2);
@@ -382,7 +383,7 @@
   color: #ccc;
   font-style: italic;
   margin-bottom: 1.5rem;
-  flex-grow: 1; /* Pushes the name to the bottom */
+  flex-grow: 1; 
 }
 
 .reviewer-footer {
@@ -397,7 +398,6 @@
   letter-spacing: 1px;
 }
 
-/* Make it responsive for mobile */
 @media (max-width: 768px) {
   .review-card {
     width: 280px;
