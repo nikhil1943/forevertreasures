@@ -4,7 +4,7 @@
   <section class="hero-section">
     <!-- Fallback if no media exists -->
     <div *ngIf="heroMedia.length === 0" class="hero-placeholder">
-      <img src="assets/logo.jpeg" alt="Forever Treasures" class="hero-logo-fallback" />
+      
     </div>
 
     <!-- Dynamic Slides -->
@@ -35,6 +35,7 @@
         </a>
       </div>
     </div>
+    
 
     <!-- Slider Controls -->
     <div class="slider-controls" *ngIf="heroMedia.length > 1">
@@ -49,7 +50,9 @@
             (click)="setSlide(i)"></span>
     </div>
   </section>
-
+<div class="logo-section">
+    <img src="assets/logo.jpeg" alt="Forever Treasures" class="hero-logo-fallback" class="logo-img" />
+  </div>
   <!-- 2. TRUST BADGES -->
   <section class="trust-badges">
     <div class="badge">

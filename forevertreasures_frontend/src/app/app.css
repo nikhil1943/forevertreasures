@@ -5,6 +5,8 @@
   left: 0;
   width: 100%;
   z-index: 9999;
+
+  /* overflow-y: auto; */
   
   /* Deepened Black Liquid Glass Tint for Higher Gold Contrast */
   background: rgba(5, 5, 5, 0.90);
