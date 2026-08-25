@@ -217,7 +217,7 @@
   border-color: #d4af37;
   box-shadow: 0 5px 15px rgba(212, 175, 55, 0.1);
 }
-.cat-content h3 { font-family: 'Cinzel', serif; font-size: 1.3rem; margin-bottom: 0.5rem; }
+.cat-content h3 { font-family: 'Cinzel', serif; font-size: 1.3rem; margin-bottom: 0.5rem; color: #d4af37; }
 .explore-link { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: #d4af37; }
 
 /* --- FEATURED PRODUCTS GRID (Fix for oversized images) --- */

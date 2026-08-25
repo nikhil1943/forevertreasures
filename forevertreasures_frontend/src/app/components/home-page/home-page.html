@@ -77,7 +77,7 @@
       <a *ngFor="let cat of categories" [routerLink]="['/products']" [queryParams]="{ category_id: cat.id }" class="category-card">
         <div class="cat-content">
           <h3>{{ cat.name }}</h3>
-          <span class="explore-link">Explore</span>
+          <!-- <span class="explore-link">Explore</span> -->
         </div>
       </a>
     </div>
