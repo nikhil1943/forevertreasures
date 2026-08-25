@@ -46,10 +46,14 @@ export class AdminComponent implements OnInit {
     display_order: 0,
     is_active: true
   };
+  
+  // Hero File Upload State
   uploadMode: 'FILE' | 'URL' = 'FILE';
   uploadingFile = false;
+  selectedHeroFile: File | null = null;
+  heroFilePreview: string | ArrayBuffer | null = null;
 
-  // Dynamic Image URLs List
+  // Dynamic Image URLs List (for Products)
   imageUrls: string[] = [''];
 
   // Order Status Options
@@ -123,6 +127,7 @@ export class AdminComponent implements OnInit {
     if (!input.files || input.files.length === 0) return;
     
     const file = input.files[0];
+    this.selectedHeroFile = file;
     
     if (file.type.startsWith('video/')) {
       this.newSlide.media_type = 'VIDEO';
@@ -134,6 +139,7 @@ export class AdminComponent implements OnInit {
     const reader = new FileReader();
     reader.onload = () => {
       this.newSlide.media_url = reader.result as string;
+      this.heroFilePreview = reader.result;
       this.uploadingFile = false;
     };
     reader.readAsDataURL(file);
@@ -145,7 +151,7 @@ export class AdminComponent implements OnInit {
 
   submitHeroMedia(): void {
     if (!this.newSlide.media_url) {
-      this.errorMessage.set('Please upload a media file or provide a valid URL.');
+      this.setErrorMessage('Please upload a media file or provide a valid URL.');
       return;
     }
 
@@ -154,7 +160,7 @@ export class AdminComponent implements OnInit {
         this.setSuccessMessage('Hero slide added successfully!');
         this.resetSlideForm();
       },
-      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to save hero slide.')
+      error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to save hero slide.')
     });
   }
 
@@ -163,7 +169,7 @@ export class AdminComponent implements OnInit {
 
     this.adminService.deleteHeroMedia(id).subscribe({
       next: () => this.setSuccessMessage('Hero slide deleted successfully!'),
-      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to delete slide.')
+      error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to delete slide.')
     });
   }
 
@@ -175,6 +181,8 @@ export class AdminComponent implements OnInit {
       is_active: true
     };
     this.uploadMode = 'FILE';
+    this.selectedHeroFile = null;
+    this.heroFilePreview = null;
   }
 
   // ==========================================
@@ -201,7 +209,7 @@ export class AdminComponent implements OnInit {
 
   submitCategory(): void {
     if (!this.categoryName.trim()) {
-      this.errorMessage.set('Category name is required.');
+      this.setErrorMessage('Category name is required.');
       return;
     }
     const slug = this.categorySlug.trim() ? this.generateSlug(this.categorySlug) : this.generateSlug(this.categoryName);
@@ -211,12 +219,12 @@ export class AdminComponent implements OnInit {
     if (currentCategory) {
       this.adminService.updateCategory(currentCategory.id, payload).subscribe({
         next: () => { this.setSuccessMessage('Category updated successfully!'); this.closeCategoryModal(); },
-        error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to update category.')
+        error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to update category.')
       });
     } else {
       this.adminService.createCategory(payload).subscribe({
         next: () => { this.setSuccessMessage('Category created successfully!'); this.closeCategoryModal(); },
-        error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to create category.')
+        error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to create category.')
       });
     }
   }
@@ -225,7 +233,7 @@ export class AdminComponent implements OnInit {
     if (!confirm('Are you sure you want to delete this category?')) return;
     this.adminService.deleteCategory(id).subscribe({
       next: () => this.setSuccessMessage('Category deleted successfully!'),
-      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to delete category.')
+      error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to delete category.')
     });
   }
 
@@ -264,7 +272,7 @@ export class AdminComponent implements OnInit {
 
   submitProduct(): void {
     if (!this.newProduct.title || !this.newProduct.price || !this.newProduct.category_id) {
-      this.errorMessage.set('Please fill out all required product fields.');
+      this.setErrorMessage('Please fill out all required product fields.');
       return;
     }
 
@@ -280,12 +288,12 @@ export class AdminComponent implements OnInit {
     if (currentProduct) {
       this.adminService.updateProduct(currentProduct.id, payload as any).subscribe({
         next: () => { this.setSuccessMessage('Product updated successfully!'); this.closeProductModal(); },
-        error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to update product.')
+        error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to update product.')
       });
     } else {
       this.adminService.createProduct(payload as any).subscribe({
         next: () => { this.setSuccessMessage('Product created successfully!'); this.closeProductModal(); },
-        error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to create product.')
+        error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to create product.')
       });
     }
   }
@@ -294,7 +302,7 @@ export class AdminComponent implements OnInit {
     if (!confirm('Are you sure you want to delete this product?')) return;
     this.adminService.deleteProduct(id).subscribe({
       next: () => this.setSuccessMessage('Product deleted successfully!'),
-      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to delete product.')
+      error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to delete product.')
     });
   }
 
@@ -302,7 +310,7 @@ export class AdminComponent implements OnInit {
     const val = Number((event.target as HTMLInputElement).value);
     this.adminService.updateStock(id, val).subscribe({
       next: () => this.setSuccessMessage('Stock level updated!'),
-      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to update stock.')
+      error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to update stock.')
     });
   }
 
@@ -314,7 +322,7 @@ export class AdminComponent implements OnInit {
     const status = (event.target as HTMLSelectElement).value as AdminOrder['status'];
     this.adminService.updateOrderStatus(id, status).subscribe({
       next: () => this.setSuccessMessage('Order status updated!'),
-      error: (err) => this.errorMessage.set(err.error?.detail || 'Failed to update order status.')
+      error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to update order status.')
     });
   }
 
@@ -329,6 +337,11 @@ export class AdminComponent implements OnInit {
 
   private setSuccessMessage(message: string): void {
     this.successMessage.set(message);
-    setTimeout(() => this.successMessage.set(''), 3000);
+    setTimeout(() => this.successMessage.set(''), 3000); // Clears after 3 seconds
+  }
+
+  private setErrorMessage(message: string): void {
+    this.errorMessage.set(message);
+    setTimeout(() => this.errorMessage.set(''), 4000); // Clears after 4 seconds
   }
 }
