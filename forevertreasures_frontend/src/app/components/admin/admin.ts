@@ -7,8 +7,8 @@ import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/ad
   selector: 'app-admin',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './admin.component.html',
-  styleUrl: './admin.component.css' // Or .scss
+  templateUrl: './admin.html',
+  styleUrl: './admin.css'
 })
 export class AdminComponent implements OnInit {
   adminService = inject(AdminService);
