@@ -68,13 +68,11 @@ export class AdminComponent implements OnInit {
   successMessage = signal<string>('');
 
   ngOnInit(): void {
-    this.adminService.loadCategories();
+    setTimeout(()=>this.adminService.loadCategories(), 2000);
     this.adminService.loadProducts();
-    this.adminService.loadOrders();
-    this.adminService.loadHeroMedia();
-    
-    // Call the local component method to fetch and store reviews
-    this.loadReviews();
+    setTimeout(()=>this.adminService.loadOrders(),3000);
+    setTimeout(()=>this.adminService.loadHeroMedia(), 4000);
+    setTimeout(()=>this.loadReviews(),5000);
   }
 
   // ==========================================

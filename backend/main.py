@@ -914,6 +914,25 @@ def health_check():
     return {"status": "healthy"}
 
 
+@app.get("/api/meta/version")
+def get_data_version(db: Session = Depends(get_db)):
+    """
+    Returns a lightweight summary of database counts/timestamps 
+    so the frontend knows instantly if data has changed.
+    """
+    category_count = db.query(models.Category).count()
+    product_count = db.query(models.Product).count()
+    review_count = db.query(models.Review).count()
+    
+    return {
+        "categories": category_count,
+        "products": product_count,
+        "reviews": review_count
+    }
+    
+    
+    
+
 # --- Register All APIRouters ---
 app.include_router(auth_router)
 app.include_router(payment_router)
