@@ -61,7 +61,7 @@ pnpm-debug.log*
 # Environment and other Files
 backend/reset_admin_password.py
 backend/create_admins.py
-
+backend/migration_script.py
 # ==========================================
 # IDEs & System Files
 # ==========================================

@@ -63,9 +63,18 @@ export class AdminService {
   heroMedia = signal<HeroMedia[]>([]);
 
   // ==========================================
+  // 🔑 NEW: FILE UPLOAD OPERATION
+  // ==========================================
+  uploadImage(file: File): Observable<{ url: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    // Sends to /api/admin/upload-image
+    return this.http.post<{ url: string }>(`${this.apiUrl}/upload-image`, formData);
+  }
+
+  // ==========================================
   // CATEGORY OPERATIONS
   // ==========================================
-
   loadCategories(): void {
     this.http.get<Category[]>(`${this.apiUrl}/categories`).pipe(
       catchError((error) => {
@@ -96,7 +105,6 @@ export class AdminService {
   // ==========================================
   // PRODUCT OPERATIONS
   // ==========================================
-
   loadProducts(): void {
     this.http.get<AdminProduct[]>(`${this.apiUrl}/products`).pipe(
       catchError((error) => {
@@ -133,7 +141,6 @@ export class AdminService {
   // ==========================================
   // ORDER OPERATIONS
   // ==========================================
-
   loadOrders(): void {
     this.http.get<AdminOrder[]>(`${this.apiUrl}/orders`).pipe(
       catchError((error) => {
@@ -152,7 +159,6 @@ export class AdminService {
   // ==========================================
   // HERO MEDIA OPERATIONS
   // ==========================================
-
   loadHeroMedia(): void {
     this.http.get<HeroMedia[]>(`${this.apiUrl}/hero-media`).pipe(
       catchError((error) => {
@@ -183,16 +189,11 @@ export class AdminService {
   // ==========================================
   // REVIEWS OPERATIONS
   // ==========================================
-
-  // Adding the method to fetch reviews for the Admin sequencing tool
   getReviews(): Observable<any[]> {
-    // Assuming your public reviews endpoint is located here. 
-    // If it's specifically under /admin, adjust the URL.
     return this.http.get<any[]>(`${environment.apiUrl}/reviews`);
   }
 
   updateReviewSequence(sequence: number[]): Observable<any> {
-    // Expecting the backend to accept an array of IDs in their new order
     return this.http.put(`${this.apiUrl}/reviews/sequence`, sequence);
   }
 }

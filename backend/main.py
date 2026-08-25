@@ -1,6 +1,7 @@
 import os
 import re
 import secrets
+import uuid
 from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Any
 
@@ -8,13 +9,14 @@ import jwt
 from pydantic import BaseModel
 import stripe
 import razorpay
-from fastapi import FastAPI, Depends, HTTPException, Query, status, APIRouter, Request, Header, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, Query, status, APIRouter, Request, Header, BackgroundTasks, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session, joinedload
-from cachetools import TTLCache # <-- New import for caching
+from cachetools import TTLCache 
 from sqlalchemy import func
+from supabase import create_client
 
 import models
 import schemas
@@ -31,9 +33,9 @@ models.Base.metadata.create_all(bind=engine)
 app = FastAPI(title="ForeverTreasures API")
 
 # --- In-Memory Cache Setup ---
-# Store up to 10 categories for 5 mins, and 200 product query variations for 5 mins
 category_cache = TTLCache(maxsize=10, ttl=300)
 product_cache = TTLCache(maxsize=200, ttl=300)
+hero_media_cache = TTLCache(maxsize=5, ttl=300)
 
 # --- Security & JWT Setup ---
 SECRET_KEY = os.getenv("JWT_SECRET_KEY", "fallback_secret")
@@ -47,13 +49,18 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 security_optional = HTTPBearer(auto_error=False)
 
-# --- External Payment SDKs Setup ---
+# --- External SDKs Setup (Stripe, Razorpay, Supabase) ---
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "sk_test_YOUR_STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_YOUR_WEBHOOK_SECRET")
 
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_YOUR_KEY")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "YOUR_SECRET")
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+
+# Set up Supabase Client for Image Uploads
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jedxyjvmsdwfaiwsryni.supabase.co")
+SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "your-service-role-key-here")
+supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
 # --- CORS Configuration ---
 app.add_middleware(
@@ -151,6 +158,16 @@ class RazorpayVerifyPayload(BaseModel):
     razorpay_payment_id: str
     razorpay_order_id: str
     razorpay_signature: str
+
+class HeroMediaUpdate(BaseModel):
+    title: Optional[str] = None
+    subtitle: Optional[str] = None
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
+    cta_link: Optional[str] = None
+    cta_text: Optional[str] = None
+    display_order: Optional[int] = None
+    is_active: Optional[bool] = None
 
 
 # --- Routers ---
@@ -349,6 +366,35 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
 # ==========================================
 # ADMIN PORTAL ENDPOINTS (/api/admin)
 # ==========================================
+
+# 🔑 NEW: Upload Image Endpoint
+@admin_router.post("/upload-image")
+def upload_product_image(
+    file: UploadFile = File(...), 
+    current_user: models.User = Depends(get_current_user_from_token)
+):
+    try:
+        # Read file
+        file_bytes = file.file.read()
+        file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+        unique_filename = f"media_{uuid.uuid4()}.{file_ext}"
+        
+        # Upload to Supabase Storage bucket
+        supabase.storage.from_("product-images").upload(
+            unique_filename,
+            file_bytes,
+            file_options={"content-type": file.content_type or "image/jpeg"}
+        )
+        
+        # Construct public URL
+        public_url = f"{SUPABASE_URL}/storage/v1/object/public/product-images/{unique_filename}"
+        
+        return {"url": public_url}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
+
+
 @admin_router.get("/dashboard-stats")
 def get_admin_dashboard_stats(db: Session = Depends(get_db)):
     total_orders = db.query(models.Order).count()
@@ -402,9 +448,7 @@ def create_category(payload: schemas.CategoryCreate, db: Session = Depends(get_d
     db.commit()
     db.refresh(new_category)
 
-    # Invalidate public category cache since data changed
     category_cache.clear()
-
     return new_category
 
 @admin_router.put("/categories/{category_id}", response_model=schemas.CategoryResponse)
@@ -418,7 +462,7 @@ def update_category(category_id: int, payload: schemas.CategoryCreate, db: Sessi
 
     db.commit()
     db.refresh(category)
-    category_cache.clear() # Invalidate cache
+    category_cache.clear()
     return category
 
 @admin_router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -429,12 +473,15 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
 
     db.delete(category)
     db.commit()
-    category_cache.clear() # Invalidate cache
+    category_cache.clear()
     return None
 
 @admin_router.get("/products", response_model=List[schemas.ProductResponse])
-def get_admin_products(db: Session = Depends(get_db)):
-    return db.query(models.Product).options(joinedload(models.Product.category)).all()
+def get_admin_products(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
+    # Re-added pagination constraint for admin portal
+    if limit > 50:
+        limit = 50 
+    return db.query(models.Product).options(joinedload(models.Product.category)).offset(skip).limit(limit).all()
 
 @admin_router.post("/products", response_model=schemas.ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_admin_product(payload: schemas.ProductCreate, db: Session = Depends(get_db)):
@@ -445,8 +492,7 @@ def create_admin_product(payload: schemas.ProductCreate, db: Session = Depends(g
     db.commit()
     db.refresh(new_product)
     
-    product_cache.clear() # Invalidate public products cache
-    
+    product_cache.clear() 
     return db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == new_product.id).first()
 
 @admin_router.put("/products/{product_id}", response_model=schemas.ProductResponse)
@@ -461,7 +507,7 @@ def update_admin_product(product_id: int, payload: schemas.ProductCreate, db: Se
 
     db.commit()
     db.refresh(product)
-    product_cache.clear() # Invalidate public products cache
+    product_cache.clear()
     
     return db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == product.id).first()
 
@@ -471,10 +517,49 @@ def delete_admin_product(product_id: int, db: Session = Depends(get_db)):
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
 
-    # Soft delete
     product.is_visible = False
     db.commit()
-    product_cache.clear() # Invalidate public products cache
+    product_cache.clear()
+    return None
+
+
+@admin_router.get("/hero-media", response_model=List[schemas.HeroMediaResponse])
+def get_admin_hero_media(db: Session = Depends(get_db)):
+    return db.query(models.HeroMedia).order_by(models.HeroMedia.display_order.asc()).all()
+
+@admin_router.post("/hero-media", response_model=schemas.HeroMediaResponse, status_code=status.HTTP_201_CREATED)
+def create_hero_media(payload: schemas.HeroMediaCreate, db: Session = Depends(get_db)):
+    new_media = models.HeroMedia(**payload.model_dump())
+    db.add(new_media)
+    db.commit()
+    db.refresh(new_media)
+    hero_media_cache.clear()
+    return new_media
+
+# 🔑 NEW: Update Hero Media Endpoint (Fixes "Failed to update slide")
+@admin_router.put("/hero-media/{media_id}")
+def update_hero_media(media_id: int, payload: HeroMediaUpdate, db: Session = Depends(get_db)):
+    media = db.query(models.HeroMedia).filter(models.HeroMedia.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Hero media slide not found")
+    
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(media, key, value)
+        
+    db.commit()
+    db.refresh(media)
+    hero_media_cache.clear()
+    return media
+
+@admin_router.delete("/hero-media/{media_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_hero_media(media_id: int, db: Session = Depends(get_db)):
+    media = db.query(models.HeroMedia).filter(models.HeroMedia.id == media_id).first()
+    if not media:
+        raise HTTPException(status_code=404, detail="Media not found")
+    db.delete(media)
+    db.commit()
+    hero_media_cache.clear()
     return None
 
 
@@ -509,19 +594,16 @@ def delete_user_address(address_id: int, current_user: models.User = Depends(get
     db.commit()
     return db.query(models.Address).filter(models.Address.user_id == current_user.id).all()
 
-# --- Public Store Catalog & Product Details (CACHED & PAGINATED) ---
+# --- Public Store Catalog & Product Details ---
 @app.get("/api/categories", response_model=List[schemas.CategoryResponse])
 def get_categories(db: Session = Depends(get_db)):
     cache_key = "public_categories"
     
-    # 1. Check cache first
     if cache_key in category_cache:
         return category_cache[cache_key]
         
-    # 2. Fetch if not in cache
     categories = db.query(models.Category).all()
     
-    # 3. Save to cache
     category_cache[cache_key] = categories
     return categories
 
@@ -531,17 +613,15 @@ def get_products(
     category_id: Optional[int] = Query(None),
     min_price: Optional[float] = Query(None),
     max_price: Optional[float] = Query(None),
-    limit: int = Query(50, le=100), # Added Pagination Limit
-    skip: int = Query(0),           # Added Pagination Skip
+    limit: int = Query(50, le=100), 
+    skip: int = Query(0),          
     db: Session = Depends(get_db)
 ):
-    # Unique cache key for exact filter combination
     cache_key = f"{search}_{category_id}_{min_price}_{max_price}_{limit}_{skip}"
     
     if cache_key in product_cache:
         return product_cache[cache_key]
 
-    # Added joinedload to prevent N+1 queries when serializing CategoryResponse
     query = db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.is_visible == True)
 
     if search:
@@ -553,16 +633,13 @@ def get_products(
     if max_price is not None:
         query = query.filter(models.Product.price <= max_price)
 
-    # Apply pagination and execute
     products = query.offset(skip).limit(limit).all()
     
-    # Save to cache
     product_cache[cache_key] = products
     return products
 
 @app.get("/api/products/{product_id}", response_model=schemas.ProductResponse)
 def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
-    # Eager load the category here too
     product = db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == product_id, models.Product.is_visible == True).first()
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -571,13 +648,11 @@ def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
 
 @app.get("/api/orders/my-orders")
 def get_my_orders(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user_from_token)):
-    # Fetch orders belonging to the logged-in user, newest first
     orders = db.query(models.Order)\
                .filter(models.Order.user_id == current_user.id)\
                .order_by(models.Order.created_at.desc())\
                .all()
     
-    # Map the database model to match the Angular interface expectations
     return [
         {
             "id": order.id,
@@ -593,7 +668,6 @@ def get_my_orders(db: Session = Depends(get_db), current_user: models.User = Dep
 
 @app.post("/api/reviews", response_model=schemas.ReviewResponse, status_code=status.HTTP_201_CREATED)
 def submit_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
-    # Find the current highest display_order so the new review goes to the end of the line
     max_order = db.query(func.max(models.Review.display_order)).scalar()
     next_order = (max_order or 0) + 1
 
@@ -608,8 +682,6 @@ def submit_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
 
 @app.get("/api/reviews", response_model=List[schemas.ReviewResponse])
 def get_approved_reviews(db: Session = Depends(get_db)):
-    # Fetches approved reviews, ordering strictly by the custom display_order sequence.
-    # We use created_at as a secondary fallback sort.
     return db.query(models.Review)\
              .filter(models.Review.is_approved == True)\
              .order_by(models.Review.display_order.asc(), models.Review.created_at.desc())\
@@ -621,12 +693,7 @@ def update_review_sequence(
     db: Session = Depends(get_db), 
     current_user: models.User = Depends(get_current_user_from_token) 
 ):
-    """
-    Takes an array of Review IDs in the desired order.
-    Assigns a display_order based on their index in the array.
-    """
     try:
-        # Loop through the array. The index becomes the display_order (0, 1, 2, 3...)
         for index, review_id in enumerate(sequence):
             review = db.query(models.Review).filter(models.Review.id == review_id).first()
             if review:
@@ -719,7 +786,7 @@ def create_order(
     db.commit()
     db.refresh(new_order)
     
-    product_cache.clear() # Clear product cache as stock levels changed
+    product_cache.clear()
 
     return {
         "id": new_order.id,
@@ -793,7 +860,7 @@ def cancel_order(
     db.commit()
     db.refresh(order)
     
-    product_cache.clear() # Clear product cache as stock levels changed
+    product_cache.clear()
     
     return {
         "message": f"Order #{order_id} successfully cancelled and stock returned to inventory.",
@@ -862,9 +929,6 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
     return {"status": "success"}
 
 
-hero_media_cache = TTLCache(maxsize=5, ttl=300)
-
-
 @app.get("/api/hero-media", response_model=List[schemas.HeroMediaResponse])
 def get_public_hero_media(db: Session = Depends(get_db)):
     cache_key = "active_hero_media"
@@ -880,31 +944,6 @@ def get_public_hero_media(db: Session = Depends(get_db)):
     hero_media_cache[cache_key] = media
     return media
 
-
-@admin_router.get("/hero-media", response_model=List[schemas.HeroMediaResponse])
-def get_admin_hero_media(db: Session = Depends(get_db)):
-    return db.query(models.HeroMedia).order_by(models.HeroMedia.display_order.asc()).all()
-
-@admin_router.post("/hero-media", response_model=schemas.HeroMediaResponse, status_code=status.HTTP_201_CREATED)
-def create_hero_media(payload: schemas.HeroMediaCreate, db: Session = Depends(get_db)):
-    new_media = models.HeroMedia(**payload.model_dump())
-    db.add(new_media)
-    db.commit()
-    db.refresh(new_media)
-    hero_media_cache.clear()
-    return new_media
-
-@admin_router.delete("/hero-media/{media_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_hero_media(media_id: int, db: Session = Depends(get_db)):
-    media = db.query(models.HeroMedia).filter(models.HeroMedia.id == media_id).first()
-    if not media:
-        raise HTTPException(status_code=404, detail="Media not found")
-    db.delete(media)
-    db.commit()
-    hero_media_cache.clear()
-    return None
-
-
 @app.get("/health")
 def health_check():
     """
@@ -912,7 +951,6 @@ def health_check():
     Does not query the database, ensuring an instant 200 OK response.
     """
     return {"status": "healthy"}
-
 
 @app.get("/api/meta/version")
 def get_data_version(db: Session = Depends(get_db)):
@@ -929,9 +967,6 @@ def get_data_version(db: Session = Depends(get_db)):
         "products": product_count,
         "reviews": review_count
     }
-    
-    
-    
 
 # --- Register All APIRouters ---
 app.include_router(auth_router)

@@ -181,24 +181,17 @@
         </div>
 
         <div *ngIf="uploadMode === 'FILE'" class="form-group">
-          <label class="file-input-label" style="text-align: center; margin-top: 0.5rem;">
-            📁 Select Image or Video
-            <input type="file" (change)="onHeroFileSelected($event)" accept="image/*,video/*" class="hidden-file-input" />
+          <label class="file-input-label" [class.uploading-disabled]="uploadingFile" style="text-align: center; margin-top: 0.5rem; cursor: pointer;">
+            <span *ngIf="!uploadingFile">📁 Select Image or Video</span>
+            <span *ngIf="uploadingFile">⏳ Uploading to Cloud...</span>
+            <input type="file" (change)="onHeroFileSelected($event)" accept="image/*,video/*" class="hidden-file-input" [disabled]="uploadingFile" />
           </label>
-          <small *ngIf="uploadingFile" style="color:#d4af37; display: block; text-align: center; margin-top: 0.5rem;">Processing media file...</small>
 
           <!-- Visual Feedback Preview -->
-          <div *ngIf="selectedHeroFile && !uploadingFile" class="file-preview-container" style="margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(212, 175, 55, 0.4); text-align: center;">
-            <p class="success-text" style="color: #4ade80; margin-bottom: 0.8rem;">✓ Selected: {{ selectedHeroFile.name }}</p>
-            <img *ngIf="heroFilePreview && newSlide.media_type === 'IMAGE'" [src]="heroFilePreview" class="admin-thumb-preview" style="max-height: 150px; border-radius: 4px;" />
-            <video *ngIf="heroFilePreview && newSlide.media_type === 'VIDEO'" [src]="heroFilePreview" class="admin-thumb-preview" style="max-height: 150px; border-radius: 4px;" muted autoplay loop></video>
-          </div>
-          
-          <!-- Existing Image Preview when editing -->
-          <div *ngIf="editingSlide() && heroFilePreview && !selectedHeroFile" class="file-preview-container" style="margin-top: 1rem; text-align: center;">
-            <p style="color: #aaa; margin-bottom: 0.5rem; font-size: 0.85rem;">Current Media:</p>
-            <img *ngIf="newSlide.media_type === 'IMAGE'" [src]="heroFilePreview" style="max-height: 150px; border-radius: 4px;" />
-            <video *ngIf="newSlide.media_type === 'VIDEO'" [src]="heroFilePreview" style="max-height: 150px; border-radius: 4px;" muted autoplay loop></video>
+          <div *ngIf="heroFilePreview && !uploadingFile" class="file-preview-container" style="margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.03); border: 1px dashed rgba(212, 175, 55, 0.4); text-align: center;">
+            <p *ngIf="selectedHeroFile" class="success-text" style="color: #4ade80; margin-bottom: 0.8rem;">✓ Uploaded Successfully!</p>
+            <img *ngIf="newSlide.media_type === 'IMAGE'" [src]="heroFilePreview" class="admin-thumb-preview" style="max-height: 150px; border-radius: 4px;" />
+            <video *ngIf="newSlide.media_type === 'VIDEO'" [src]="heroFilePreview" class="admin-thumb-preview" style="max-height: 150px; border-radius: 4px;" muted autoplay loop></video>
           </div>
         </div>
 
@@ -233,7 +226,7 @@
         </div>
 
         <div class="modal-actions" style="margin-top: 1rem; display: flex; gap: 1rem;">
-          <button type="submit" [disabled]="uploadingFile" class="btn-primary" style="flex: 1;">
+          <button type="submit" [disabled]="uploadingFile" class="btn-primary" style="flex: 1;" [class.opacity-50]="uploadingFile">
             {{ editingSlide() ? 'Update Slide' : 'Add Slide to Homepage' }}
           </button>
           
@@ -268,7 +261,6 @@
           </div>
 
           <div class="slide-actions">
-            <!-- Edit Button Added -->
             <button class="btn-sm btn-edit" (click)="editHeroSlide(slide)">Edit</button>
             <button class="btn-sm btn-delete" (click)="deleteHeroSlide(slide.id)">Delete</button>
           </div>
@@ -342,12 +334,13 @@
         </div>
 
         <!-- Direct File Input -->
-        <div class="file-picker-row">
-          <label class="file-input-label">
-            📁 Choose Local File
-            <input type="file" accept="image/*" (change)="onFileSelected($event, i)" class="hidden-file-input" />
+        <div class="file-picker-row" style="margin-top: 0.5rem;">
+          <label class="file-input-label" [class.uploading-disabled]="isUploadingImage[i]" style="cursor: pointer;">
+            <span *ngIf="!isUploadingImage[i]">📁 Choose Local File</span>
+            <span *ngIf="isUploadingImage[i]">⏳ Uploading...</span>
+            <input type="file" accept="image/*" (change)="onFileSelected($event, i)" class="hidden-file-input" [disabled]="isUploadingImage[i]" />
           </label>
-          <img *ngIf="imageUrls[i]" [src]="imageUrls[i]" alt="Preview" class="image-preview-thumb" />
+          <img *ngIf="imageUrls[i] && !isUploadingImage[i]" [src]="imageUrls[i]" alt="Preview" class="image-preview-thumb" style="max-height: 40px; margin-left: 10px; border-radius: 4px;" />
         </div>
       </div>
 
@@ -382,7 +375,8 @@
 
     <div class="modal-actions">
       <button class="btn-secondary" (click)="closeProductModal()">Cancel</button>
-      <button class="btn-primary" (click)="submitProduct()">
+      <!-- Disable saving if any image is actively uploading -->
+      <button class="btn-primary" (click)="submitProduct()" [disabled]="isUploadingImage.includes(true)" [class.opacity-50]="isUploadingImage.includes(true)">
         {{ editingProduct() ? 'Update Product' : 'Create Product' }}
       </button>
     </div>

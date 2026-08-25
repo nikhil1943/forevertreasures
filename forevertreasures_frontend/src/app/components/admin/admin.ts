@@ -1,31 +1,29 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/admin';
+import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/admin'; // Adjust path if needed
 
 @Component({
   selector: 'app-admin',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './admin.html',
-  styleUrl: './admin.css'
+  templateUrl: './admin.component.html',
+  styleUrl: './admin.component.css' // Or .scss
 })
 export class AdminComponent implements OnInit {
   adminService = inject(AdminService);
 
-  // Active Tab Navigation (Added 'reviews' to the allowed types)
   activeTab = signal<'inventory' | 'orders' | 'categories' | 'hero' | 'reviews'>('inventory');
 
-  // Modal Display Signals
   showCategoryModal = signal<boolean>(false);
   showProductModal = signal<boolean>(false);
 
-  // Category Form State
+  // Category State
   editingCategory = signal<Category | null>(null);
   categoryName = '';
   categorySlug = '';
 
-  // Product Form State
+  // Product State
   editingProduct = signal<any | null>(null);
   newProduct = {
     title: '',
@@ -35,35 +33,25 @@ export class AdminComponent implements OnInit {
     category_id: null as number | null
   };
 
-  // Hero Media Form State
+  // Dynamic Image URLs List & Upload Trackers
+  imageUrls: string[] = [''];
+  isUploadingImage: boolean[] = [false]; // Tracks loading spinners for each input
+
+  // Hero Media State
   newSlide: Partial<HeroMedia> = {
-    title: '',
-    subtitle: '',
-    media_url: '',
-    media_type: 'IMAGE',
-    cta_link: '/products',
-    cta_text: 'Shop Collection',
-    display_order: 0,
-    is_active: true
+    title: '', subtitle: '', media_url: '', media_type: 'IMAGE',
+    cta_link: '/products', cta_text: 'Shop Collection', display_order: 0, is_active: true
   };
   editingSlide = signal<HeroMedia | null>(null);
   
-  // Hero File Upload State
   uploadMode: 'FILE' | 'URL' = 'FILE';
   uploadingFile = false;
   selectedHeroFile: File | null = null;
-  heroFilePreview: string | ArrayBuffer | null = null;
+  heroFilePreview: string | null = null;
 
-  // Dynamic Image URLs List (for Products)
-  imageUrls: string[] = [''];
-
-  // Order Status Options
   statuses: AdminOrder['status'][] = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
-
-  // State Array for Review Sequencing
   adminReviews: any[] = [];
 
-  // Feedback Messages
   errorMessage = signal<string>('');
   successMessage = signal<string>('');
 
@@ -76,20 +64,18 @@ export class AdminComponent implements OnInit {
   }
 
   // ==========================================
-  // HELPER CLEANUP & UTILITY FUNCTIONS
+  // HELPERS
   // ==========================================
-
   private resetCategoryForm(): void {
-    this.categoryName = '';
-    this.categorySlug = '';
-    this.editingCategory.set(null);
-    this.errorMessage.set('');
+    this.categoryName = ''; this.categorySlug = '';
+    this.editingCategory.set(null); this.errorMessage.set('');
   }
 
   private resetProductForm(): void {
     this.editingProduct.set(null);
     this.newProduct = { title: '', description: '', price: null, stock_quantity: 0, category_id: null };
     this.imageUrls = [''];
+    this.isUploadingImage = [false];
     this.errorMessage.set('');
   }
 
@@ -100,33 +86,46 @@ export class AdminComponent implements OnInit {
   trackByIndex(index: number): number { return index; }
 
   // ==========================================
-  // FILE UPLOAD HELPERS
+  // REAL-TIME FILE UPLOADS (SUPABASE URLS)
   // ==========================================
-
-  addImageUrlInput(): void { this.imageUrls.push(''); }
+  addImageUrlInput(): void { 
+    this.imageUrls.push(''); 
+    this.isUploadingImage.push(false);
+  }
 
   removeImageUrlInput(index: number): void {
     if (this.imageUrls.length > 1) {
       this.imageUrls.splice(index, 1);
+      this.isUploadingImage.splice(index, 1);
     } else {
       this.imageUrls[0] = '';
+      this.isUploadingImage[0] = false;
     }
   }
 
+  // Products Image Upload
   onFileSelected(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
-    const reader = new FileReader();
+    this.isUploadingImage[index] = true; // Show spinner
 
-    reader.onload = () => {
-      this.imageUrls[index] = reader.result as string;
-    };
-    reader.readAsDataURL(file);
+    this.adminService.uploadImage(file).subscribe({
+      next: (res) => {
+        this.imageUrls[index] = res.url; // Save the returned Supabase URL
+        this.isUploadingImage[index] = false; // Stop spinner
+        input.value = ''; // Reset input so they can upload again if needed
+      },
+      error: (err) => {
+        console.error(err);
+        this.setErrorMessage('Failed to upload product image to cloud.');
+        this.isUploadingImage[index] = false;
+      }
+    });
   }
 
-  // File Upload specifically for Hero Media
+  // Hero Image/Video Upload
   onHeroFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -140,28 +139,32 @@ export class AdminComponent implements OnInit {
       this.newSlide.media_type = 'IMAGE';
     }
 
-    this.uploadingFile = true;
-    const reader = new FileReader();
-    reader.onload = () => {
-      this.newSlide.media_url = reader.result as string;
-      this.heroFilePreview = reader.result;
-      this.uploadingFile = false;
-    };
-    reader.readAsDataURL(file);
+    this.uploadingFile = true; // Show spinner
+
+    this.adminService.uploadImage(file).subscribe({
+      next: (res) => {
+        this.newSlide.media_url = res.url;
+        this.heroFilePreview = res.url;
+        this.uploadingFile = false; // Stop spinner
+        input.value = '';
+      },
+      error: (err) => {
+        console.error(err);
+        this.setErrorMessage('Failed to upload hero media.');
+        this.uploadingFile = false;
+      }
+    });
   }
 
   // ==========================================
-  // HERO MEDIA OPERATIONS
+  // HERO MEDIA
   // ==========================================
-
   editHeroSlide(slide: HeroMedia): void {
     this.editingSlide.set(slide);
     this.newSlide = { ...slide }; 
     this.heroFilePreview = slide.media_url;
     this.selectedHeroFile = null;
     this.uploadMode = slide.media_url.startsWith('http') ? 'URL' : 'FILE';
-    
-    // Scroll to top where the form is
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -175,25 +178,15 @@ export class AdminComponent implements OnInit {
       this.setErrorMessage('Please upload a media file or provide a valid URL.');
       return;
     }
-
     const currentSlide = this.editingSlide();
-
     if (currentSlide) {
-      // UPDATE EXISTING SLIDE
       this.adminService.updateHeroMedia(currentSlide.id, this.newSlide).subscribe({
-        next: () => {
-          this.setSuccessMessage('Hero slide updated successfully!');
-          this.cancelEditHero();
-        },
+        next: () => { this.setSuccessMessage('Hero slide updated successfully!'); this.cancelEditHero(); },
         error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to update hero slide.')
       });
     } else {
-      // CREATE NEW SLIDE
       this.adminService.createHeroMedia(this.newSlide).subscribe({
-        next: () => {
-          this.setSuccessMessage('Hero slide added successfully!');
-          this.resetSlideForm();
-        },
+        next: () => { this.setSuccessMessage('Hero slide added successfully!'); this.resetSlideForm(); },
         error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to save hero slide.')
       });
     }
@@ -201,7 +194,6 @@ export class AdminComponent implements OnInit {
 
   deleteHeroSlide(id: number): void {
     if (!confirm('Are you sure you want to delete this hero slide?')) return;
-
     this.adminService.deleteHeroMedia(id).subscribe({
       next: () => this.setSuccessMessage('Hero slide deleted successfully!'),
       error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to delete slide.')
@@ -221,44 +213,32 @@ export class AdminComponent implements OnInit {
   }
 
   // ==========================================
-  // CATEGORY OPERATIONS
+  // CATEGORIES
   // ==========================================
-
-  openAddCategoryModal(): void {
-    this.resetCategoryForm();
-    this.showCategoryModal.set(true);
-  }
+  openAddCategoryModal(): void { this.resetCategoryForm(); this.showCategoryModal.set(true); }
 
   openEditCategoryModal(category: Category): void {
     this.editingCategory.set(category);
-    this.categoryName = category.name;
-    this.categorySlug = category.slug || '';
-    this.errorMessage.set('');
-    this.showCategoryModal.set(true);
+    this.categoryName = category.name; this.categorySlug = category.slug || '';
+    this.errorMessage.set(''); this.showCategoryModal.set(true);
   }
 
-  closeCategoryModal(): void {
-    this.showCategoryModal.set(false);
-    this.resetCategoryForm();
-  }
+  closeCategoryModal(): void { this.showCategoryModal.set(false); this.resetCategoryForm(); }
 
   submitCategory(): void {
-    if (!this.categoryName.trim()) {
-      this.setErrorMessage('Category name is required.');
-      return;
-    }
+    if (!this.categoryName.trim()) { this.setErrorMessage('Category name is required.'); return; }
     const slug = this.categorySlug.trim() ? this.generateSlug(this.categorySlug) : this.generateSlug(this.categoryName);
     const payload = { name: this.categoryName.trim(), slug: slug };
     const currentCategory = this.editingCategory();
 
     if (currentCategory) {
       this.adminService.updateCategory(currentCategory.id, payload).subscribe({
-        next: () => { this.setSuccessMessage('Category updated successfully!'); this.closeCategoryModal(); },
+        next: () => { this.setSuccessMessage('Category updated!'); this.closeCategoryModal(); },
         error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to update category.')
       });
     } else {
       this.adminService.createCategory(payload).subscribe({
-        next: () => { this.setSuccessMessage('Category created successfully!'); this.closeCategoryModal(); },
+        next: () => { this.setSuccessMessage('Category created!'); this.closeCategoryModal(); },
         error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to create category.')
       });
     }
@@ -267,19 +247,15 @@ export class AdminComponent implements OnInit {
   deleteCategory(id: number): void {
     if (!confirm('Are you sure you want to delete this category?')) return;
     this.adminService.deleteCategory(id).subscribe({
-      next: () => this.setSuccessMessage('Category deleted successfully!'),
+      next: () => this.setSuccessMessage('Category deleted!'),
       error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to delete category.')
     });
   }
 
   // ==========================================
-  // PRODUCT OPERATIONS
+  // PRODUCTS
   // ==========================================
-
-  openAddProductModal(): void {
-    this.resetProductForm();
-    this.showProductModal.set(true);
-  }
+  openAddProductModal(): void { this.resetProductForm(); this.showProductModal.set(true); }
 
   openEditProductModal(product: any): void {
     this.editingProduct.set(product);
@@ -295,19 +271,24 @@ export class AdminComponent implements OnInit {
     } else {
       this.imageUrls = [''];
     }
+    
+    // Create tracking array mapping directly to image count
+    this.isUploadingImage = Array(this.imageUrls.length).fill(false);
 
     this.errorMessage.set('');
     this.showProductModal.set(true);
   }
 
-  closeProductModal(): void {
-    this.showProductModal.set(false);
-    this.resetProductForm();
-  }
+  closeProductModal(): void { this.showProductModal.set(false); this.resetProductForm(); }
 
   submitProduct(): void {
     if (!this.newProduct.title || !this.newProduct.price || !this.newProduct.category_id) {
       this.setErrorMessage('Please fill out all required product fields.');
+      return;
+    }
+    
+    if (this.isUploadingImage.includes(true)) {
+      this.setErrorMessage('Please wait for images to finish uploading before saving.');
       return;
     }
 
@@ -336,7 +317,7 @@ export class AdminComponent implements OnInit {
   deleteProduct(id: number): void {
     if (!confirm('Are you sure you want to delete this product?')) return;
     this.adminService.deleteProduct(id).subscribe({
-      next: () => this.setSuccessMessage('Product deleted successfully!'),
+      next: () => this.setSuccessMessage('Product deleted!'),
       error: (err) => this.setErrorMessage(err.error?.detail || 'Failed to delete product.')
     });
   }
@@ -350,9 +331,8 @@ export class AdminComponent implements OnInit {
   }
 
   // ==========================================
-  // ORDER OPERATIONS
+  // ORDERS
   // ==========================================
-
   onStatusChange(id: number, event: Event): void {
     const status = (event.target as HTMLSelectElement).value as AdminOrder['status'];
     this.adminService.updateOrderStatus(id, status).subscribe({
@@ -362,18 +342,12 @@ export class AdminComponent implements OnInit {
   }
 
   // ==========================================
-  // REVIEW OPERATIONS (Sequencing)
+  // REVIEWS
   // ==========================================
-  
   loadReviews(): void {
     this.adminService.getReviews().subscribe({
-      next: (data) => {
-        this.adminReviews = data;
-      },
-      error: (err) => {
-        console.error('Failed to load admin reviews:', err);
-        this.setErrorMessage('Could not load reviews from server.');
-      }
+      next: (data) => { this.adminReviews = data; },
+      error: (err) => { console.error(err); this.setErrorMessage('Could not load reviews from server.'); }
     });
   }
 
@@ -397,16 +371,9 @@ export class AdminComponent implements OnInit {
     const sequencedIds = this.adminReviews.map(r => r.id);
     this.adminService.updateReviewSequence(sequencedIds).subscribe({
       next: () => this.setSuccessMessage('Review sequence updated successfully!'),
-      error: (err) => {
-        console.error(err);
-        this.setErrorMessage('Failed to update review sequence.');
-      }
+      error: (err) => { console.error(err); this.setErrorMessage('Failed to update review sequence.'); }
     });
   }
-
-  // ==========================================
-  // GENERAL HELPERS
-  // ==========================================
 
   getCategoryName(id: number): string {
     const cat = this.adminService.categories().find(c => c.id === id);
@@ -415,11 +382,11 @@ export class AdminComponent implements OnInit {
 
   private setSuccessMessage(message: string): void {
     this.successMessage.set(message);
-    setTimeout(() => this.successMessage.set(''), 3000); // Clears after 3 seconds
+    setTimeout(() => this.successMessage.set(''), 3000);
   }
 
   private setErrorMessage(message: string): void {
     this.errorMessage.set(message);
-    setTimeout(() => this.errorMessage.set(''), 4000); // Clears after 4 seconds
+    setTimeout(() => this.errorMessage.set(''), 4000);
   }
 }
