@@ -1,6 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field, ConfigDict, AliasChoices
 from typing import Optional, List
-
+from datetime import datetime
 
 # --- Category Schemas ---
 class CategoryBase(BaseModel):
@@ -155,4 +155,17 @@ class HeroMediaCreate(HeroMediaBase):
 
 class HeroMediaResponse(HeroMediaBase):
     id: int
+    model_config = ConfigDict(from_attributes=True)
+    
+    
+
+class ReviewCreate(BaseModel):
+    customer_name: str
+    rating: int = Field(..., ge=1, le=5)
+    comment: str
+
+class ReviewResponse(ReviewCreate):
+    id: int
+    is_approved: bool
+    created_at: datetime
     model_config = ConfigDict(from_attributes=True)

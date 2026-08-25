@@ -1,32 +1,54 @@
-<div class="confirmation-container" style="max-width: 600px; margin: 3rem auto; padding: 2rem; background: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); text-align: center;">
-  
-  <div class="success-icon" style="width: 64px; height: 64px; background: #dcfce7; color: #16a34a; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2rem;">
-    ✓
-  </div>
-
-  <h1 style="font-size: 1.8rem; margin-bottom: 0.5rem; color: #0f172a;">Thank you for your order!</h1>
-  <p style="color: #64748b; margin-bottom: 2rem;">We have received your order and sent a confirmation to <strong>{{ order?.email }}</strong>.</p>
-
-  <div class="receipt-card" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1.5rem; text-align: left; margin-bottom: 2rem;">
-    <h2 style="font-size: 1.1rem; border-bottom: 1px solid #cbd5e1; padding-bottom: 0.75rem; margin-bottom: 1rem; color: #334155;">Order Details</h2>
+<div class="confirmation-container">
+  <!-- Existing Order Success Message -->
+  <div class="success-card">
+    <div class="check-icon">✓</div>
+    <h1>Thank You For Your Purchase!</h1>
+    <p>Your order has been received and is being processed.</p>
+    <p>An email confirmation has been sent to your registered address.</p>
     
-    <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
-      <span style="color: #64748b;">Order Reference:</span>
-      <strong style="color: #0f172a;">#{{ order?.id }}</strong>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; margin-bottom: 0.75rem;">
-      <span style="color: #64748b;">Customer Name:</span>
-      <span style="color: #0f172a;">{{ order?.customer_name }}</span>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; font-size: 1.1rem; margin-top: 1rem; padding-top: 0.75rem; border-top: 1px dashed #cbd5e1;">
-      <span style="font-weight: 600;">Total Paid:</span>
-      <strong style="color: #16a34a;">${{ order?.total_amount?.toFixed(2) }}</strong>
-    </div>
+    <a routerLink="/products" class="btn-primary">Continue Shopping</a>
   </div>
 
-  <a routerLink="/products" style="display: inline-block; padding: 0.75rem 2rem; background: #2563eb; color: #ffffff; border-radius: 6px; text-decoration: none; font-weight: 600;">
-    Continue Shopping
-  </a>
+  <!-- NEW: Feedback Section -->
+  <div class="feedback-card" *ngIf="!reviewSubmitted">
+    <h2>How was your experience?</h2>
+    <p>We'd love to hear your thoughts on our store.</p>
+    
+    <form (ngSubmit)="submitFeedback()" class="feedback-form">
+      
+      <!-- Interactive Star Rating -->
+      <div class="star-rating">
+        <span *ngFor="let star of stars" 
+              class="star" 
+              [class.filled]="star <= reviewForm.rating"
+              (click)="setRating(star)">
+          ★
+        </span>
+      </div>
+
+      <input type="text" 
+             [(ngModel)]="reviewForm.customer_name" 
+             name="name" 
+             placeholder="Your Full Name" 
+             class="luxury-input" 
+             required />
+
+      <textarea [(ngModel)]="reviewForm.comment" 
+                name="comment" 
+                placeholder="Share your feedback with us..." 
+                rows="4" 
+                class="luxury-input" 
+                required></textarea>
+
+      <button type="submit" class="btn-primary submit-btn" [disabled]="isSubmitting">
+        {{ isSubmitting ? 'Submitting...' : 'Submit Feedback' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- Thank You Message after submission -->
+  <div class="feedback-card success-feedback" *ngIf="reviewSubmitted">
+    <h2>Feedback Received!</h2>
+    <p>Thank you for sharing your experience. We truly appreciate your support!</p>
+  </div>
 </div>

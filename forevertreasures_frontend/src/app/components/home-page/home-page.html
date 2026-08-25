@@ -2,7 +2,7 @@
   
   <!-- 1. HERO SLIDESHOW -->
   <section class="hero-section">
-    <!-- Fallback if no media exists in DB yet -->
+    <!-- Fallback if no media exists -->
     <div *ngIf="heroMedia.length === 0" class="hero-placeholder">
       <img src="assets/logo.jpeg" alt="Forever Treasures" class="hero-logo-fallback" />
     </div>
@@ -12,18 +12,19 @@
          class="hero-slide" 
          [class.active]="i === currentSlideIndex">
       
-      <!-- Video Background -->
-      <video *ngIf="slide.media_type === 'VIDEO'" 
+      <!-- Clickable Media Wrap -->
+      <a [routerLink]="slide.cta_link ? slide.cta_link : null" class="media-link-wrapper">
+        <video *ngIf="slide.media_type === 'VIDEO'" 
+               [src]="slide.media_url" 
+               autoplay muted playsinline 
+               (ended)="onVideoEnded()"
+               class="media-bg"></video>
+               
+        <img *ngIf="slide.media_type === 'IMAGE'" 
              [src]="slide.media_url" 
-             autoplay muted playsinline 
-             (ended)="onVideoEnded()"
-             class="media-bg"></video>
-             
-      <!-- Image Background -->
-      <img *ngIf="slide.media_type === 'IMAGE'" 
-           [src]="slide.media_url" 
-           [alt]="slide.title" 
-           class="media-bg" />
+             [alt]="slide.title" 
+             class="media-bg" />
+      </a>
 
       <!-- Text & CTA Overlay -->
       <div class="hero-overlay" *ngIf="slide.title || slide.subtitle">
@@ -82,21 +83,27 @@
     </div>
   </section>
 
-  <!-- 4. FEATURED TREASURES -->
+  <!-- 4. FEATURED TREASURES (Grid Layout) -->
   <section class="featured-section" *ngIf="featuredProducts.length > 0">
     <h2 class="section-heading">Featured Treasures</h2>
     
-    <!-- Reuse your existing product list CSS structures here if desired -->
     <div class="product-grid">
       <div *ngFor="let product of featuredProducts" class="product-card">
-        <a [routerLink]="['/products', product.id]" class="image-container">
-          <img [src]="product.image_urls?.[0] || 'https://via.placeholder.com/300?text=No+Image'" 
-               [alt]="product.title" class="slide-image"/>
+        
+        <!-- Clickable Image Container (Dynamically Sized) -->
+        <a [routerLink]="['/products', product.id]" class="product-image-container">
+          <img [src]="product.image_urls?.[0] || product.image_url || 'assets/logo.jpeg'" 
+               [alt]="product.title" class="product-image"/>
         </a>
+        
+        <!-- Details Below Image -->
         <div class="product-info">
-          <h3 class="product-title"><a [routerLink]="['/products', product.id]">{{ product.title }}</a></h3>
-          <p class="product-price">Rs. {{ product.price.toFixed(2) }}</p>
+          <h3 class="product-title">
+            <a [routerLink]="['/products', product.id]">{{ product.title }}</a>
+          </h3>
+          <p class="product-price">₹{{ product.price | number:'1.2-2' }}</p>
         </div>
+
       </div>
     </div>
     
@@ -104,4 +111,26 @@
       <a routerLink="/products" class="view-all-btn">View Full Collection</a>
     </div>
   </section>
+
+  <!-- 5. CLIENT TESTIMONIALS (Horizontal Scroll) -->
+  <section class="testimonials-section" *ngIf="reviews.length > 0">
+    <h2 class="section-heading">Client Testimonials</h2>
+    
+    <div class="carousel-container">
+      <div class="reviews-track">
+        
+        <div class="review-card" *ngFor="let review of reviews">
+          <div class="review-stars">
+            <span *ngFor="let star of getStarsArray(review.rating)">★</span>
+          </div>
+          <p class="review-text">"{{ review.comment }}"</p>
+          <div class="reviewer-footer">
+            <span class="reviewer-name">- {{ review.customer_name }}</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+  
 </div>

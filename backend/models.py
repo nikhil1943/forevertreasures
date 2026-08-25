@@ -2,6 +2,7 @@ from datetime import datetime
 from sqlalchemy import ARRAY, Column, Integer, String, Float, Boolean, ForeignKey, Text, DateTime, JSON
 from sqlalchemy.orm import relationship
 from database import Base
+from sqlalchemy.sql import func
 
 
 
@@ -127,3 +128,14 @@ class HeroMedia(Base):
     cta_text = Column(String(50), default="Shop Now")
     display_order = Column(Integer, default=0, index=True)
     is_active = Column(Boolean, default=True, index=True)
+    
+    
+class Review(Base):
+    __tablename__ = "reviews"
+
+    id = Column(Integer, primary_key=True, index=True)
+    customer_name = Column(String(100), nullable=False)
+    rating = Column(Integer, nullable=False) # 1 to 5
+    comment = Column(Text, nullable=False)
+    is_approved = Column(Boolean, default=True) # Defaults to true so it shows up immediately
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -3,6 +3,9 @@ import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core
 import { RouterModule } from '@angular/router';
 import { ProductService, Product, Category, HeroMedia } from '../../services/product';
 
+// Import the dedicated feedback service
+import { FeedbackService, Review } from '../../services/feedback';
+
 @Component({
   selector: 'app-home-page',
   standalone: true,
@@ -12,11 +15,15 @@ import { ProductService, Product, Category, HeroMedia } from '../../services/pro
 })
 export class HomePage implements OnInit, OnDestroy {
   private productService = inject(ProductService);
+  private feedbackService = inject(FeedbackService); // Inject the new service
   private platformId = inject(PLATFORM_ID);
 
   heroMedia: HeroMedia[] = [];
   featuredProducts: Product[] = [];
   categories: Category[] = [];
+  
+  // State array for the customer reviews
+  reviews: Review[] = []; 
 
   currentSlideIndex = 0;
   private slideTimeout: any;
@@ -44,9 +51,22 @@ export class HomePage implements OnInit, OnDestroy {
       .subscribe(products => {
         this.featuredProducts = products;
       });
+
+    // 4. Load Customer Reviews for the Testimonial Carousel
+    this.feedbackService.getReviews().subscribe(data => {
+      this.reviews = data;
+    });
+  }
+
+  // --- TESTIMONIALS LOGIC ---
+  
+  // Helper to generate an array for the stars loop in HTML
+  getStarsArray(rating: number): number[] {
+    return Array(rating).fill(0);
   }
 
   // --- SLIDESHOW LOGIC ---
+  
   startSlideTimer(): void {
     this.clearTimer();
     const currentSlide = this.heroMedia[this.currentSlideIndex];

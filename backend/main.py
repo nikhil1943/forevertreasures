@@ -569,6 +569,27 @@ def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
 
 
 # ==========================================
+# FEEDBACK MANAGEMENT LOGIC (/api/reviews)
+# ==========================================
+
+@app.post("/api/reviews", response_model=schemas.ReviewResponse, status_code=status.HTTP_201_CREATED)
+def submit_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
+    new_review = models.Review(**review.model_dump())
+    db.add(new_review)
+    db.commit()
+    db.refresh(new_review)
+    return new_review
+
+@app.get("/api/reviews", response_model=List[schemas.ReviewResponse])
+def get_approved_reviews(db: Session = Depends(get_db)):
+    # Only fetches approved reviews, ordered by newest first
+    return db.query(models.Review)\
+             .filter(models.Review.is_approved == True)\
+             .order_by(models.Review.created_at.desc())\
+             .all()
+
+
+# ==========================================
 # STOREFRONT ORDER MANAGEMENT (/api/orders)
 # ==========================================
 @orders_router.post("", status_code=status.HTTP_201_CREATED)
