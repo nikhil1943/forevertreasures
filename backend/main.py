@@ -379,15 +379,18 @@ def upload_product_image(
         file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
         unique_filename = f"media_{uuid.uuid4()}.{file_ext}"
         
-        # Upload to Supabase Storage bucket
-        supabase.storage.from_("product-images").upload(
+        # 1. Define your exact bucket name here
+        bucket_name = "Forever Treasures Product Images"
+        
+        # 2. Upload to Supabase Storage bucket
+        supabase.storage.from_(bucket_name).upload(
             unique_filename,
             file_bytes,
             file_options={"content-type": file.content_type or "image/jpeg"}
         )
         
-        # Construct public URL
-        public_url = f"{SUPABASE_URL}/storage/v1/object/public/product-images/{unique_filename}"
+        # 3. Let Supabase automatically generate the correct, web-safe URL!
+        public_url = supabase.storage.from_(bucket_name).get_public_url(unique_filename)
         
         return {"url": public_url}
         

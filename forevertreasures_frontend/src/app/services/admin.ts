@@ -36,7 +36,7 @@ export interface ProductPayload {
   price: number;
   stock_quantity: number;
   category_id: number;
-  images?: string[];
+  image_urls?: string[]; // 🔑 Changed from 'images' to 'image_urls'
 }
 
 export interface HeroMedia {
