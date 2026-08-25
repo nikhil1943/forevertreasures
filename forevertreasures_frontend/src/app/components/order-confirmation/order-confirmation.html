@@ -16,11 +16,12 @@
     
     <form (ngSubmit)="submitFeedback()" class="feedback-form">
       
-      <!-- Interactive Star Rating -->
-      <div class="star-rating">
+      <!-- Replace your existing .star-rating block with this: -->
+      <div class="star-rating" (mouseleave)="onStarLeave()">
         <span *ngFor="let star of stars" 
               class="star" 
-              [class.filled]="star <= reviewForm.rating"
+              [class.filled]="star <= (hoverRating || reviewForm.rating)"
+              (mouseenter)="onStarHover(star)"
               (click)="setRating(star)">
           ★
         </span>

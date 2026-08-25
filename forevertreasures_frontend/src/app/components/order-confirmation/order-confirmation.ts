@@ -26,6 +26,10 @@ export class OrderConfirmationComponent implements OnInit {
   
   order: OrderDetails | null = null;
 
+  // Add this property inside your OrderConfirmationComponent class:
+  hoverRating = 0;
+
+
   // --- Review Form State ---
   reviewForm: Review = {
     customer_name: '',
@@ -53,6 +57,15 @@ export class OrderConfirmationComponent implements OnInit {
     if (this.order?.customer_name) {
       this.reviewForm.customer_name = this.order.customer_name;
     }
+  }
+
+  // Add these helper methods to handle mouse movement:
+  onStarHover(val: number): void {
+    this.hoverRating = val;
+  }
+
+  onStarLeave(): void {
+    this.hoverRating = 0;
   }
 
   // --- Feedback Logic ---
