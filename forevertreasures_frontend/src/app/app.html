@@ -40,7 +40,6 @@
           <div class="mega-menu-column">
             <h4 class="menu-heading">Shop by Categories</h4>
             
-            <!-- Updated to clear all filters -->
             <a style="cursor: pointer;" (click)="clearAllFilters()">All Products</a>
             
             <a *ngFor="let category of categories()" style="cursor: pointer;" (click)="filterByCategory(category.id)">
@@ -66,12 +65,13 @@
         ⚡ Portal
       </a>
 
-      <!-- NEW: My Orders Link (Only visible if logged in) -->
+      <!-- My Orders Link (Only visible if logged in) -->
       <a *ngIf="authService.isLoggedIn()" routerLink="/my-orders" (click)="closeMobileMenu()" routerLinkActive="active" class="orders-nav-link">
         📦 My Orders
       </a>
       
-      <button *ngIf="authService.isLoggedIn()" (click)="handleCartClick()" class="cart-link">
+      <!-- 🔑 REMOVED the *ngIf here so the cart is visible to guests! -->
+      <button (click)="handleCartClick()" class="cart-link">
         🛒 Cart
         <span *ngIf="totalCount() > 0" class="cart-badge">{{ totalCount() }}</span>
       </button>

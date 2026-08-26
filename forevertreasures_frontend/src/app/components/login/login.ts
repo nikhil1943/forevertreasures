@@ -1,7 +1,7 @@
 import { Component, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router'; // 🔑 Added ActivatedRoute
 import { AuthService } from '../../services/auth';
 
 @Component({
@@ -14,6 +14,7 @@ import { AuthService } from '../../services/auth';
 export class LoginComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
+  private route = inject(ActivatedRoute); // 🔑 Inject ActivatedRoute
 
   mode = signal<'login' | 'register' | '2fa'>('login');
   errorMessage = signal<string | null>(null);
@@ -33,7 +34,6 @@ export class LoginComponent {
   regPassword = signal('');
 
   onSubmitLogin(event: Event): void {
-
     if(!this.loginEmail() || !this.loginPassword()) {
       this.errorMessage.set('Please enter both email and password.');
       return;
@@ -52,12 +52,20 @@ export class LoginComponent {
         if (res.requires2FA) {
           this.mode.set('2fa');
         } else {
-          this.router.navigate([res.user?.role === 'admin' ? '/admin' : '/products']);
+          // 🔑 Check for return URL
+          const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+          
+          if (res.user?.role === 'admin') {
+            this.router.navigate(['/admin']);
+          } else if (returnUrl) {
+            this.router.navigateByUrl(returnUrl); // Send back to checkout
+          } else {
+            this.router.navigate(['/products']);
+          }
         }
       },
       error: (err) => {
         this.isLoading.set(false);
-        // Extracts FastAPI exception detail
         this.errorMessage.set(err.error?.detail || err.error?.message || 'Invalid email or password.');
       }
     });
@@ -100,7 +108,14 @@ export class LoginComponent {
     }).subscribe({
       next: () => {
         this.isLoading.set(false);
-        this.router.navigate(['/products']);
+        
+        // 🔑 Check for return URL after registration
+        const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+        if (returnUrl) {
+          this.router.navigateByUrl(returnUrl);
+        } else {
+          this.router.navigate(['/products']);
+        }
       },
       error: (err) => {
         this.isLoading.set(false);

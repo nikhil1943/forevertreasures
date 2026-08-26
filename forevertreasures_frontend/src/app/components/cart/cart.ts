@@ -1,12 +1,14 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink } from '@angular/router';
+import { RouterLink, Router } from '@angular/router'; // 🔑 Added Router
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
 import { Cart } from '../../services/cart';
+import { AuthService } from '../../services/auth'; // 🔑 Added AuthService
 
 @Component({
   selector: 'app-cart',
+  standalone: true,
   imports: [CommonModule, RouterLink, FormsModule],
   templateUrl: './cart.html',
   styleUrl: './cart.css',
@@ -14,6 +16,8 @@ import { Cart } from '../../services/cart';
 export class CartComponent {
   cartService = inject(Cart);
   private sanitizer = inject(DomSanitizer);
+  private router = inject(Router);           // 🔑 Inject Router
+  private authService = inject(AuthService); // 🔑 Inject AuthService
 
   // Directly access the signals from the service
   cartItems = this.cartService.items;
@@ -32,5 +36,16 @@ export class CartComponent {
 
   getSafeUrl(url: string): SafeUrl {
     return this.sanitizer.bypassSecurityTrustUrl(url);
+  }
+
+  // 🔑 Intercepts the checkout click
+  proceedToCheckout(): void {
+    if (this.authService.isLoggedIn()) {
+      // Allow them straight through to checkout
+      this.router.navigate(['/checkout']);
+    } else {
+      // Send them to the login page, but remember they want to go to checkout!
+      this.router.navigate(['/login'], { queryParams: { returnUrl: '/checkout' } });
+    }
   }
 }
