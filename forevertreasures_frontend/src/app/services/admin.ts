@@ -72,6 +72,15 @@ export class AdminService {
     return this.http.post<{ url: string }>(`${this.apiUrl}/upload-image`, formData);
   }
 
+  // Add this right below your uploadProductImage method
+  uploadHeroImage(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Make sure this matches your API route perfectly
+    return this.http.post<{url: string}>(`${this.apiUrl}/api/admin/upload-hero-image`, formData);
+  }
+
   // ==========================================
   // CATEGORY OPERATIONS
   // ==========================================

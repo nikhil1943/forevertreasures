@@ -565,6 +565,32 @@ def delete_hero_media(media_id: int, db: Session = Depends(get_db)):
     hero_media_cache.clear()
     return None
 
+# 🔑 NEW: Upload Hero Image Endpoint
+@admin_router.post("/upload-hero-image")
+def upload_hero_image(
+    file: UploadFile = File(...), 
+    current_user: models.User = Depends(get_current_user_from_token)
+):
+    try:
+        file_bytes = file.file.read()
+        file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+        unique_filename = f"hero_{uuid.uuid4()}.{file_ext}"
+        
+        # Pointing to the new bucket
+        bucket_name = "hero-images"
+        
+        supabase.storage.from_(bucket_name).upload(
+            unique_filename,
+            file_bytes,
+            file_options={"content-type": file.content_type or "image/jpeg"}
+        )
+        
+        public_url = supabase.storage.from_(bucket_name).get_public_url(unique_filename)
+        
+        return {"url": public_url}
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Hero image upload failed: {str(e)}")
 
 # ==========================================
 # PUBLIC STOREFRONT ENDPOINTS (/api/...)

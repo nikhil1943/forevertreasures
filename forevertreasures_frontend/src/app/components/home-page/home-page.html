@@ -4,7 +4,6 @@
   <section class="hero-section">
     <!-- Fallback if no media exists -->
     <div *ngIf="heroMedia.length === 0" class="hero-placeholder">
-      
     </div>
 
     <!-- Dynamic Slides -->
@@ -36,7 +35,6 @@
       </div>
     </div>
     
-
     <!-- Slider Controls -->
     <div class="slider-controls" *ngIf="heroMedia.length > 1">
       <button class="nav-btn prev" (click)="prevSlide()">&#10094;</button>
@@ -50,9 +48,12 @@
             (click)="setSlide(i)"></span>
     </div>
   </section>
-<div class="logo-section">
-    <img src="assets/logo.jpeg" alt="Forever Treasures" class="hero-logo-fallback" class="logo-img" />
+
+  <div class="logo-section">
+    <!-- Fixed duplicate class attribute here -->
+    <img src="assets/logo.jpeg" alt="Forever Treasures" class="hero-logo-fallback logo-img" />
   </div>
+
   <!-- 2. TRUST BADGES -->
   <section class="trust-badges">
     <div class="badge">
@@ -67,10 +68,6 @@
       <span class="icon">✈️</span>
       <p>Express Shipping</p>
     </div>
-    <!-- <div class="badge">
-      <span class="icon">🔄</span>
-      <p>Easy Returns</p>
-    </div> -->
   </section>
 
   <!-- 3. SHOP BY CATEGORY -->
@@ -80,7 +77,6 @@
       <a *ngFor="let cat of categories" [routerLink]="['/products']" [queryParams]="{ category_id: cat.id }" class="category-card">
         <div class="cat-content">
           <h3>{{ cat.name }}</h3>
-          <!-- <span class="explore-link">Explore</span> -->
         </div>
       </a>
     </div>
@@ -95,9 +91,9 @@
         
         <!-- Clickable Image Container (Dynamically Sized) -->
         <a [routerLink]="['/products', product.id]" class="product-image-container">
-          <!-- Removed the '?' and the singular 'product.image_url' -->
-          <img [src]="product.image_urls[0] || 'assets/logo.jpeg'" 
-              [alt]="product.title" class="product-image"/>
+          <!-- Safely checks if array exists and has items before reading index 0 -->
+          <img [src]="(product.image_urls && product.image_urls.length > 0) ? product.image_urls[0] : 'assets/logo.jpeg'" 
+               [alt]="product.title" class="product-image"/>
         </a>
         
         <!-- Details Below Image -->

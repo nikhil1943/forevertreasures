@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/admin'; // Adjust path if needed
+import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/admin'; 
 
 @Component({
   selector: 'app-admin',
@@ -35,7 +35,7 @@ export class AdminComponent implements OnInit {
 
   // Dynamic Image URLs List & Upload Trackers
   imageUrls: string[] = [''];
-  isUploadingImage: boolean[] = [false]; // Tracks loading spinners for each input
+  isUploadingImage: boolean[] = [false]; 
 
   // Hero Media State
   newSlide: Partial<HeroMedia> = {
@@ -45,7 +45,7 @@ export class AdminComponent implements OnInit {
   editingSlide = signal<HeroMedia | null>(null);
   
   uploadMode: 'FILE' | 'URL' = 'FILE';
-  uploadingFile = false;
+  uploadingFile = false; // Used for Hero Uploads
   selectedHeroFile: File | null = null;
   heroFilePreview: string | null = null;
 
@@ -86,7 +86,7 @@ export class AdminComponent implements OnInit {
   trackByIndex(index: number): number { return index; }
 
   // ==========================================
-  // REAL-TIME FILE UPLOADS (SUPABASE URLS)
+  // PRODUCT IMAGE UPLOADS
   // ==========================================
   addImageUrlInput(): void { 
     this.imageUrls.push(''); 
@@ -103,19 +103,18 @@ export class AdminComponent implements OnInit {
     }
   }
 
-  // Products Image Upload
   onFileSelected(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
-    this.isUploadingImage[index] = true; // Show spinner
+    this.isUploadingImage[index] = true; 
 
     this.adminService.uploadImage(file).subscribe({
       next: (res) => {
-        this.imageUrls[index] = res.url; // Save the returned Supabase URL
-        this.isUploadingImage[index] = false; // Stop spinner
-        input.value = ''; // Reset input so they can upload again if needed
+        this.imageUrls[index] = res.url; 
+        this.isUploadingImage[index] = false; 
+        input.value = ''; 
       },
       error: (err) => {
         console.error(err);
@@ -125,32 +124,25 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  // Hero Image/Video Upload
+  // ==========================================
+  // HERO IMAGE UPLOADS
+  // ==========================================
   onHeroFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
-    
+
     const file = input.files[0];
-    this.selectedHeroFile = file;
+    this.uploadingFile = true; // Use uploadingFile, not isLoading
     
-    if (file.type.startsWith('video/')) {
-      this.newSlide.media_type = 'VIDEO';
-    } else if (file.type.startsWith('image/')) {
-      this.newSlide.media_type = 'IMAGE';
-    }
-
-    this.uploadingFile = true; // Show spinner
-
-    this.adminService.uploadImage(file).subscribe({
-      next: (res) => {
-        this.newSlide.media_url = res.url;
-        this.heroFilePreview = res.url;
-        this.uploadingFile = false; // Stop spinner
-        input.value = '';
+    this.adminService.uploadHeroImage(file).subscribe({
+      next: (response) => {
+        this.newSlide.media_url = response.url;
+        this.uploadingFile = false;
+        input.value = ''; // Reset input
       },
       error: (err) => {
-        console.error(err);
-        this.setErrorMessage('Failed to upload hero media.');
+        console.error('Upload failed', err);
+        this.setErrorMessage('Failed to upload hero image.');
         this.uploadingFile = false;
       }
     });
@@ -264,17 +256,16 @@ export class AdminComponent implements OnInit {
       price: product.price || null, stock_quantity: product.stock_quantity || 0, category_id: product.category_id || null
     };
 
-    if (product.images && Array.isArray(product.images) && product.images.length > 0) {
-      this.imageUrls = [...product.images];
-    } else if (product.image_url) {
-      this.imageUrls = [product.image_url];
+    // Safely parse old data arrays or new image_urls
+    const imagesToLoad = product.image_urls || product.images || (product.image_url ? [product.image_url] : []);
+    
+    if (imagesToLoad.length > 0) {
+      this.imageUrls = [...imagesToLoad];
     } else {
       this.imageUrls = [''];
     }
     
-    // Create tracking array mapping directly to image count
     this.isUploadingImage = Array(this.imageUrls.length).fill(false);
-
     this.errorMessage.set('');
     this.showProductModal.set(true);
   }
@@ -293,10 +284,12 @@ export class AdminComponent implements OnInit {
     }
 
     const cleanedImages = this.imageUrls.map(url => url.trim()).filter(url => url.length > 0);
+    
     const payload = {
       title: this.newProduct.title, description: this.newProduct.description,
       price: Number(this.newProduct.price), stock_quantity: Number(this.newProduct.stock_quantity) || 0,
-      category_id: Number(this.newProduct.category_id), images: cleanedImages
+      category_id: Number(this.newProduct.category_id), 
+      image_urls: cleanedImages // 🔑 Fixed payload to send image_urls!
     };
 
     const currentProduct = this.editingProduct();
