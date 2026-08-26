@@ -1,4 +1,9 @@
 /* --- LAYOUT & BACKGROUND --- */
+:host {
+  display: block;
+  background-color: #0f0f11;
+}
+
 .dark-background-wrapper {
   min-height: 100vh;
   display: flex;
@@ -7,6 +12,8 @@
   background-color: #0f0f11;
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   padding: 1rem;
+  padding-top: 80px; /* Accounts for desktop navbar */
+  box-sizing: border-box;
 }
 
 /* --- THE GLASS CARD --- */
@@ -28,10 +35,10 @@
   /* Creates stacking context for the glow */
   isolation: isolate;
   color: white;
+  box-sizing: border-box;
 }
 
 /* --- THE ANIMATED GOLD GLOW --- */
-/* --- THE SOFTER, MORE SUBTLE ANIMATED GOLD GLOW --- */
 .glass-card::before {
   content: "";
   position: absolute;
@@ -77,13 +84,6 @@
   }
 }
 
-
-@keyframes goldShimmer {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
 /* --- TYPOGRAPHY --- */
 .title {
   margin: 0 0 0.5rem 0;
@@ -93,7 +93,7 @@
   background: linear-gradient(to right, #bf953f, #fcf6ba, #bf953f);
   background-size: 200% auto;
   -webkit-background-clip: text;
-  background-clip: text; /* 👈 ADD THIS LINE */
+  background-clip: text; 
   -webkit-text-fill-color: transparent;
   animation: textShine 4s linear infinite;
 }
@@ -232,4 +232,28 @@
 .switch-mode a:hover {
   color: #fff;
   text-decoration: underline;
+}
+
+/* ==============================
+   MOBILE RESPONSIVENESS
+   ============================== */
+@media (max-width: 768px) {
+  .dark-background-wrapper {
+    padding-top: 100px; /* Accounts for mobile navbar */
+  }
+}
+
+@media (max-width: 480px) {
+  .dark-background-wrapper {
+    padding: 100px 1rem 2rem 1rem;
+    align-items: flex-start; /* Prevents the top of the card from cutting off on tiny screens */
+  }
+  
+  .glass-card {
+    padding: 1.5rem;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
 }

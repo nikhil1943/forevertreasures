@@ -68,6 +68,12 @@
   flex-wrap: wrap;
 }
 
+.tab-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
 .tab-controls button {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(212, 175, 55, 0.3);
@@ -161,13 +167,14 @@
   border: 1px solid rgba(212, 175, 55, 0.2);
   border-radius: 8px;
   padding: 1.5rem;
-  overflow-x: auto;
+  overflow-x: auto; /* Required for horizontal scrolling on mobile */
 }
 
 .admin-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
+  min-width: 600px; /* Forces table to allow horizontal scrolling on small devices instead of squishing */
 }
 
 .admin-table th, .admin-table td {
@@ -243,6 +250,7 @@ code {
   justify-content: center;
   align-items: center;
   z-index: 1000;
+  padding: 1rem; /* Prevents modal from touching the screen edges on mobile */
 }
 
 .modal-card {
@@ -254,6 +262,7 @@ code {
   max-width: 500px;
   max-height: 90vh;
   overflow-y: auto;
+  box-sizing: border-box;
 }
 
 .modal-card h2 {
@@ -291,6 +300,7 @@ code {
   padding: 0.6rem;
   border-radius: 4px;
   font-size: 0.95rem;
+  box-sizing: border-box;
 }
 
 .form-group input:focus, .form-group textarea:focus {
@@ -379,20 +389,12 @@ code {
   margin-top: 1.5rem;
 }
 
-
-/* --- HERO MEDIA SECTION (Appended to existing admin.css) --- */
-
+/* --- HERO MEDIA SECTION --- */
 .split-panel {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
   gap: 3rem;
   align-items: start;
-}
-
-@media (max-width: 900px) {
-  .split-panel {
-    grid-template-columns: 1fr;
-  }
 }
 
 .section-title {
@@ -497,4 +499,53 @@ code {
   margin: 0;
   font-size: 0.8rem;
   color: #d4af37;
+}
+
+/* ==============================
+   MOBILE RESPONSIVENESS
+   ============================== */
+
+/* Adjust split panel on medium screens (Tablets) */
+@media (max-width: 900px) {
+  .split-panel {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  :host {
+    padding: 100px 1rem 30px 1rem;
+  }
+
+  .admin-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Make forms stack vertically on small screens */
+  .form-row {
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .modal-card {
+    padding: 1.5rem;
+  }
+
+  .slide-item-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .slide-preview {
+    width: 100%;
+    height: 120px;
+  }
 }

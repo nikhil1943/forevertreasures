@@ -1,4 +1,9 @@
 /* --- LAYOUT & DARK BACKGROUND --- */
+:host {
+  display: block;
+  background-color: #0f0f11;
+}
+
 .dark-background-wrapper {
   min-height: 100vh;
   display: flex;
@@ -6,7 +11,7 @@
   justify-content: center;
   background-color: #0f0f11;
   font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-  padding: 2rem 1rem;
+  padding: 120px 1rem 2rem 1rem; /* Added 120px top padding to clear the fixed navbar */
   box-sizing: border-box;
 }
 
@@ -61,6 +66,7 @@
   text-align: center;
   background: linear-gradient(to right, #bf953f, #fcf6ba, #bf953f);
   -webkit-background-clip: text;
+  background-clip: text; /* Ensures standard CSS compatibility */
   -webkit-text-fill-color: transparent;
 }
 
@@ -266,9 +272,32 @@ input[type="email"]:focus {
   margin-bottom: 1.5rem;
 }
 
+/* ==============================
+   MOBILE RESPONSIVENESS
+   ============================== */
+@media (max-width: 768px) {
+  .dark-background-wrapper {
+    padding-top: 100px; /* Accounts for mobile navbar */
+  }
+}
+
 @media (max-width: 640px) {
   .field-row,
   .region-selector {
     grid-template-columns: 1fr;
+  }
+  
+  /* Shrink padding so the card breathes on small phones */
+  .glass-card {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+  }
+  
+  .custom-address-fields {
+    padding: 1rem;
   }
 }

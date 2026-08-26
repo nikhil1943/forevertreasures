@@ -2,9 +2,9 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, effect, inject, OnDestroy, OnInit, HostListener, PLATFORM_ID } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeUrl } from '@angular/platform-browser';
+import { ActivatedRoute, RouterLink } from '@angular/router'; // 🔑 Added ActivatedRoute
 import { Category, Product, ProductService } from '../../services/product';
 import { Cart } from '../../services/cart';
-import { RouterLink } from '@angular/router';
 
 export interface PriceRange {
   label: string;
@@ -24,6 +24,7 @@ export class ProductList implements OnInit, OnDestroy {
   private cartService = inject(Cart);
   private sanitizer = inject(DomSanitizer);
   private platformId = inject(PLATFORM_ID);
+  private route = inject(ActivatedRoute); // 🔑 Injected the Route to read URL parameters
 
   products: Product[] = [];
   categories: Category[] = [];
@@ -33,11 +34,11 @@ export class ProductList implements OnInit, OnDestroy {
   searchQuery: string = '';
   
   // Infinite Scroll State
-  limit = 20; // Fetch 20 products per scroll
+  limit = 20; 
   skip = 0;
-  isInitialLoad: boolean = true; // Shows skeleton loaders
-  isLoadingMore: boolean = false; // Shows spinner at bottom
-  hasMore: boolean = true; // Tracks if we hit the end of the database
+  isInitialLoad: boolean = true; 
+  isLoadingMore: boolean = false; 
+  hasMore: boolean = true; 
 
   priceRanges: PriceRange[] = [
     { label: 'Under Rs. 500', min: 0, max: 500 },
@@ -51,7 +52,7 @@ export class ProductList implements OnInit, OnDestroy {
   private hoverIntervals: { [productId: number]: ReturnType<typeof setInterval> } = {};
 
   constructor() {
-    // Reacts instantly when a user clicks a filter in the Navbar
+    // Reacts instantly when a user clicks a filter in the Navbar OR Homepage
     effect(() => {
       const filters = this.productService.activeFilters();
       this.selectedCategoryId = filters.categoryId ?? null;
@@ -73,6 +74,16 @@ export class ProductList implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadCategories();
+
+    // 🔑 Listen to the URL. If the user clicked a category on the homepage, 
+    // it will have ?category_id=X in the address bar.
+    this.route.queryParams.subscribe(params => {
+      if (params['category_id']) {
+        const catId = Number(params['category_id']);
+        // Setting this triggers the effect() above automatically!
+        this.productService.setCategoryFilter(catId); 
+      }
+    });
   }
 
   loadCategories(): void {

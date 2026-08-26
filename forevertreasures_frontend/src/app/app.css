@@ -5,8 +5,6 @@
   left: 0;
   width: 100%;
   z-index: 9999;
-
-  /* overflow-y: auto; */
   
   /* Deepened Black Liquid Glass Tint for Higher Gold Contrast */
   background: rgba(5, 5, 5, 0.90);
@@ -353,8 +351,14 @@
     backdrop-filter: blur(28px) saturate(200%);
     -webkit-backdrop-filter: blur(28px) saturate(200%);
     flex-direction: column;
-    justify-content: center;
+    /* CHANGED: Switched from center to flex-start to prevent overlap */
+    justify-content: flex-start; 
     align-items: center;
+    /* ADDED: Safe padding to clear the logo, and bottom padding for scrolling */
+    padding-top: 120px; 
+    padding-bottom: 50px;
+    /* ADDED: Allows the menu to scroll if the device is very short */
+    overflow-y: auto;
     gap: 2rem;
     transform: translateY(-100%);
     opacity: 0;
@@ -432,9 +436,7 @@
     height: 4px;
     background: rgba(212, 175, 55, 0.4);
     border-radius: 2px;
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    /* Removed absolute positioning so it flows naturally in the scrollable menu */
+    margin: 20px auto 0 auto; 
   }
 }

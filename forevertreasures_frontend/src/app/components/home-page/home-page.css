@@ -6,7 +6,6 @@
   min-height: 100vh;
 }
 
-
 .logo-section{
   height: 50vh;
   width: 100%;
@@ -17,14 +16,6 @@
 }
 
 /* --- HERO SLIDESHOW --- */
-/*
-.hero-image {
-  width: 100%;
-  height: 100%;
-  object-fit: contain; // Changes from cover to contain 
-  background-color: #000000; // Fills the empty space cleanly 
-}
-*/
 .hero-section {
   position: relative;
   width: 100%;
@@ -76,7 +67,7 @@
 .media-bg {
   width: 100%;
   height: 100%;
-  object-fit:fill; /* Forces images/video to fill the constrained container without stretching */
+  object-fit: fill; /* Forces images/video to fill the constrained container without stretching */
   object-position: center;
   /* filter: brightness(0.65); */
 }
@@ -240,7 +231,7 @@
 .cat-content h3 { font-family: 'Cinzel', serif; font-size: 1.3rem; margin-bottom: 0.5rem; color: #d4af37; }
 .explore-link { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; color: #d4af37; }
 
-/* --- FEATURED PRODUCTS GRID (Fix for oversized images) --- */
+/* --- FEATURED PRODUCTS GRID --- */
 .featured-section {
   padding: 0 5% 5rem;
 }
@@ -266,16 +257,14 @@
   transform: translateY(-5px);
 }
 
-/* Forces the image container into a perfect square, stopping vertical stretching */
 .product-image-container {
   display: block;
   width: 100%;
   aspect-ratio: 1 / 1; 
   overflow: hidden;
-  background: #111; /* Dark fallback background while loading */
+  background: #111;
 }
 
-/* Forces the image to fill the square perfectly without distortion */
 .product-image {
   width: 100%;
   height: 100%;
@@ -287,7 +276,6 @@
   transform: scale(1.05);
 }
 
-/* Product Text Information */
 .product-info {
   padding: 1.2rem;
   text-align: center;
@@ -337,7 +325,6 @@
   color: #000;
 }
 
-
 /* --- TESTIMONIALS CAROUSEL --- */
 .testimonials-section {
   padding: 2rem 0 5rem;
@@ -357,15 +344,15 @@
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  scrollbar-width: none; /* Firefox */
+  scrollbar-width: none;
 }
 
 .reviews-track::-webkit-scrollbar {
-  display: none; /* Hide scrollbar for Chrome, Safari */
+  display: none; 
 }
 
 .review-card {
-  flex: 0 0 auto; /* Prevents cards from shrinking */
+  flex: 0 0 auto; 
   width: 350px;
   background: #0a0a0a;
   border: 1px solid rgba(212, 175, 55, 0.2);
@@ -395,7 +382,7 @@
   color: #ccc;
   font-style: italic;
   margin-bottom: 1.5rem;
-  flex-grow: 1; /* Pushes the name to the bottom */
+  flex-grow: 1; 
 }
 
 .reviewer-footer {
@@ -410,9 +397,86 @@
   letter-spacing: 1px;
 }
 
-/* Make it responsive for mobile */
+
+/* ==============================
+   MOBILE RESPONSIVENESS
+   ============================== */
+
+/* Tablets and smaller */
 @media (max-width: 768px) {
-  .review-card {
-    width: 280px;
+  /* Hero shrinks slightly */
+  .hero-section { 
+    height: 60vh; 
+    min-height: 350px;
+  }
+  .hero-title { 
+    font-size: 2.2rem; 
+  }
+  .hero-subtitle { 
+    font-size: 0.9rem; 
+    letter-spacing: 1px;
+  }
+  .hero-overlay { 
+    width: 90%; 
+  }
+  .hero-cta-btn {
+    padding: 0.8rem 1.8rem;
+    font-size: 0.9rem;
+  }
+  .nav-btn {
+    padding: 0.5rem;
+  }
+
+  /* Logo Section shrinks */
+  .logo-section {
+    height: 30vh;
+    padding: 2rem 0;
+  }
+  .hero-logo-fallback {
+    max-width: 80%;
+  }
+
+  /* Stack trust badges vertically */
+  .trust-badges {
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* Shrink text on section headers */
+  .section-heading { 
+    font-size: 1.8rem; 
+    margin: 3rem 0 1.5rem; 
+  }
+
+  /* Adjust grid columns */
+  .category-grid {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+  .product-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 1rem;
+  }
+
+  /* Shrink review cards so part of the next one is visible */
+  .review-card { 
+    width: 280px; 
+    padding: 1.5rem;
+  }
+}
+
+/* Very Small Phones */
+@media (max-width: 480px) {
+  /* Force single column layout */
+  .category-grid, .product-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  /* Make category cards a bit slimmer on full-width */
+  .category-card {
+    height: 120px;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
   }
 }
