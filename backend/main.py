@@ -62,6 +62,10 @@ SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jedxyjvmsdwfaiwsryni.supabase.
 SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "your-service-role-key-here")
 supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
 
+PRODUCT_IMG_BUCKET = os.getenv("PRODUCT_IMG_BUCKET")
+HERO_IMG_BUCKET = os.getenv("HERO_IMG_BUCKET")
+
+
 # --- CORS Configuration ---
 app.add_middleware(
     CORSMiddleware,
@@ -380,7 +384,7 @@ def upload_product_image(
         unique_filename = f"media_{uuid.uuid4()}.{file_ext}"
         
         # 1. Define your exact bucket name here
-        bucket_name = "Forever Treasures Product Images"
+        bucket_name = PRODUCT_IMG_BUCKET
         
         # 2. Upload to Supabase Storage bucket
         supabase.storage.from_(bucket_name).upload(
@@ -577,7 +581,7 @@ def upload_hero_image(
         unique_filename = f"hero_{uuid.uuid4()}.{file_ext}"
         
         # Pointing to the new bucket
-        bucket_name = "hero-images"
+        bucket_name = HERO_IMG_BUCKET
         
         supabase.storage.from_(bucket_name).upload(
             unique_filename,
