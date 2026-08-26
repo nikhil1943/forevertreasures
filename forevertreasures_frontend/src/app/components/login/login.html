@@ -3,10 +3,10 @@
     
     <!-- Title -->
     <h2 class="title">
-      {{ mode() === 'login' ? 'Admin Login' : (mode() === '2fa' ? 'Security Check' : 'Create Account') }}
+      {{ mode() === 'login' ? 'Login' : (mode() === '2fa' ? 'Security Check' : 'Create Account') }}
     </h2>
     <p class="subtitle">
-      {{ mode() === 'login' ? 'Sign in to access Forever Treasures.' : (mode() === '2fa' ? 'Enter the code sent to your email.' : 'Join Forever Treasures today.') }}
+      {{ mode() === 'login' ? 'Sign in to access your account.' : (mode() === '2fa' ? 'Enter the code sent to your email.' : 'Join Forever Treasures today.') }}
     </p>
 
     <!-- Error Message -->
@@ -44,7 +44,7 @@
 
 
     <!-- ========================================= -->
-    <!-- 2FA VERIFICATION FORM -->
+    <!-- 2FA VERIFICATION FORM (Only shows if Backend asks for it) -->
     <!-- ========================================= -->
     <form *ngIf="mode() === '2fa'" (ngSubmit)="onSubmit2FA($event)" class="auth-form">
       

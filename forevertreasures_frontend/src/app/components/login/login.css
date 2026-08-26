@@ -93,6 +93,7 @@
   background: linear-gradient(to right, #bf953f, #fcf6ba, #bf953f);
   background-size: 200% auto;
   -webkit-background-clip: text;
+  background-clip: text; /* 👈 ADD THIS LINE */
   -webkit-text-fill-color: transparent;
   animation: textShine 4s linear infinite;
 }
