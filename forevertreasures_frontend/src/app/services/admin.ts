@@ -51,6 +51,19 @@ export interface HeroMedia {
   is_active: boolean;
 }
 
+
+// Add this interface near your others at the top
+export interface ContactQuery {
+  id: number;
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  status: string;
+  created_at: string;
+}
+
+
 @Injectable({ providedIn: 'root' })
 export class AdminService {
   private http = inject(HttpClient);
@@ -78,7 +91,7 @@ export class AdminService {
     formData.append('file', file);
     
     // Make sure this matches your API route perfectly
-    return this.http.post<{url: string}>(`${this.apiUrl}/api/admin/upload-hero-image`, formData);
+    return this.http.post<{url: string}>(`${this.apiUrl}/upload-hero-image`, formData);
   }
 
   // ==========================================
@@ -205,4 +218,15 @@ export class AdminService {
   updateReviewSequence(sequence: number[]): Observable<any> {
     return this.http.put(`${this.apiUrl}/reviews/sequence`, sequence);
   }
+
+  // ==========================================
+  // SUPPORT TICKETS (CONTACT QUERIES)
+  // ==========================================
+  getContactQueries(): Observable<ContactQuery[]> {
+    return this.http.get<ContactQuery[]>(`${this.apiUrl}/queries`);
+  }
+
+  resolveContactQuery(id: number): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/queries/${id}/resolve`, {});
+}
 }

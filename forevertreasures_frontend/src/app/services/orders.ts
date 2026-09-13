@@ -7,9 +7,17 @@ import { environment } from '../../environments/prod/environment';
 // Make sure this matches the interface in your my-orders.ts component
 export interface CustomerOrder {
   id: number;
-  date: string; 
+  order_number?: string; 
+  date: string;
   total_amount: number;
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  items: { 
+    product_id: number; 
+    title: string; 
+    quantity: number; 
+    price: number;
+    image: string;
+  }[]; 
 }
 
 @Injectable({

@@ -16,10 +16,11 @@
         <button [class.active]="activeTab() === 'orders'" (click)="activeTab.set('orders')">Orders</button>
         <button [class.active]="activeTab() === 'hero'" (click)="activeTab.set('hero')">Slideshow</button>
         <button [class.active]="activeTab() === 'reviews'" (click)="activeTab.set('reviews')">Reviews</button>
+        <button [class.active]="activeTab() === 'queries'" (click)="activeTab.set('queries')">Support Tickets</button>
       </div>
 
       <!-- Hide these buttons when on the Hero or Reviews tab -->
-      <div class="modal-buttons" *ngIf="activeTab() !== 'hero' && activeTab() !== 'reviews'">
+        <div class="modal-buttons" *ngIf="activeTab() !== 'hero' && activeTab() !== 'reviews' && activeTab() !== 'queries'">
         <button class="btn-primary" (click)="openAddCategoryModal()">+ New Category</button>
         <button class="btn-primary" (click)="openAddProductModal()">+ New Product</button>
       </div>
@@ -152,6 +153,52 @@
         </div>
       </div>
     </div>
+  </section>
+  
+  <!-- Support Tickets / Queries Tab -->
+  <section *ngIf="activeTab() === 'queries'" class="panel-section">
+    <table class="admin-table">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Customer Details</th>
+          <th>Subject & Message</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngIf="contactQueries.length === 0">
+          <td colspan="5" style="text-align: center; color: #888; padding: 2rem;">No support tickets found.</td>
+        </tr>
+        <tr *ngFor="let query of contactQueries">
+          <td class="sku-cell">#{{ query.id }}</td>
+          <td>
+            <strong>{{ query.name }}</strong>
+            <p class="desc-preview" style="color: #38bdf8;">{{ query.email }}</p>
+            <small style="color: #666;">{{ query.created_at | date:'medium' }}</small>
+          </td>
+          <td>
+            <strong style="color: #f3e5ab;">{{ query.subject }}</strong>
+            <p class="desc-preview" style="white-space: pre-wrap; line-height: 1.4; margin-top: 0.5rem; max-width: 400px;">{{ query.message }}</p>
+          </td>
+          <td>
+            <!-- Borrowing the existing 'Delivered' (Green) and 'Pending' (Yellow) CSS colors -->
+            <span class="status-badge" [attr.data-status]="query.status === 'Resolved' ? 'Delivered' : 'Pending'">
+              {{ query.status }}
+            </span>
+          </td>
+          <td>
+            <button *ngIf="query.status !== 'Resolved'" class="btn-sm btn-edit" (click)="markQueryResolved(query.id)">
+              Mark Resolved
+            </button>
+            <span *ngIf="query.status === 'Resolved'" style="color: #4ade80; font-size: 0.85rem; font-weight: bold;">
+              ✓ Closed
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </section>
 
   <!-- Hero Banner Management Tab -->

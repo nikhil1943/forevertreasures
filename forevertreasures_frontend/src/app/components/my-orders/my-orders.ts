@@ -1,18 +1,11 @@
 import { Component, OnInit, inject, PLATFORM_ID } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { RouterModule } from '@angular/router';
+import { RouterModule, Router } from '@angular/router';
 
 // Adjust the path to match where your actual OrderService is located
-import { OrderService } from '../../services/orders'; 
+import { OrderService, CustomerOrder } from '../../services/orders'; 
 
-// Example Interface (adjust this to match what your OrderService actually returns)
-export interface CustomerOrder {
-  id: number;
-  date: string;
-  total_amount: number;
-  status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-  items?: { name: string; quantity: number; price: number }[]; // Optional depending on your API
-}
+// 🔑 Updated interface to match the exact keys sent by the FastAPI backend
 
 @Component({
   selector: 'app-my-orders',
@@ -24,6 +17,7 @@ export interface CustomerOrder {
 export class MyOrdersComponent implements OnInit {
   private orderService = inject(OrderService);
   private platformId = inject(PLATFORM_ID);
+  private router = inject(Router); // 🔑 Injected Router for the help button
 
   orders: CustomerOrder[] = [];
   isLoading = true;
@@ -33,12 +27,11 @@ export class MyOrdersComponent implements OnInit {
     if (isPlatformBrowser(this.platformId)) {
       this.fetchOrders();
     } else {
-      this.isLoading = false; // Prevents loading spinner from hanging on SSR
+      this.isLoading = false; 
     }
   }
 
   fetchOrders(): void {
-    // Assuming your OrderService has a method to fetch orders for the logged-in user
     this.orderService.getOrders().subscribe({
       next: (data) => {
         this.orders = data;
@@ -50,5 +43,11 @@ export class MyOrdersComponent implements OnInit {
         this.isLoading = false;
       }
     });
+  }
+
+  // 🔑 Smart routing function for the "Need Help?" button
+  contactSupport(orderId: number): void {
+    // Navigates to contact page and passes the Order ID in the URL bar
+    this.router.navigate(['/contact-us'], { queryParams: { orderRef: orderId } });
   }
 }

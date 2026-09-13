@@ -5,7 +5,6 @@ from database import Base
 from sqlalchemy.sql import func
 
 
-
 class User(Base):
     __tablename__ = "users"
 
@@ -100,12 +99,6 @@ class Product(Base):
     
     
     
-    
-# models.py
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
-from sqlalchemy.sql import func
-from database import Base
-
 class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
@@ -140,3 +133,15 @@ class Review(Base):
     is_approved = Column(Boolean, default=True) # Defaults to true so it shows up immediately
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     display_order = Column(Integer, default=0)
+    
+    
+class ContactQuery(Base):
+    __tablename__ = "contact_queries"
+
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, index=True)
+    email = Column(String, index=True)
+    subject = Column(String)
+    message = Column(Text)
+    status = Column(String, default="Pending") # E.g., 'Pending', 'Resolved'
+    created_at = Column(DateTime, default=datetime.utcnow)

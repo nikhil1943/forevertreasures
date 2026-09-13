@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/admin'; 
+import { AdminService, AdminOrder, Category, HeroMedia, ContactQuery } from '../../services/admin'; 
 
 @Component({
   selector: 'app-admin',
@@ -13,7 +13,7 @@ import { AdminService, AdminOrder, Category, HeroMedia } from '../../services/ad
 export class AdminComponent implements OnInit {
   adminService = inject(AdminService);
 
-  activeTab = signal<'inventory' | 'orders' | 'categories' | 'hero' | 'reviews'>('inventory');
+  activeTab = signal<'inventory' | 'orders' | 'categories' | 'hero' | 'reviews' | 'queries'>('inventory');
 
   showCategoryModal = signal<boolean>(false);
   showProductModal = signal<boolean>(false);
@@ -51,6 +51,7 @@ export class AdminComponent implements OnInit {
 
   statuses: AdminOrder['status'][] = ['Pending', 'Processing', 'Shipped', 'Delivered', 'Cancelled'];
   adminReviews: any[] = [];
+  contactQueries: ContactQuery[] = [];
 
   errorMessage = signal<string>('');
   successMessage = signal<string>('');
@@ -60,7 +61,8 @@ export class AdminComponent implements OnInit {
     this.adminService.loadProducts();
     setTimeout(()=>this.adminService.loadOrders(),3000);
     setTimeout(()=>this.adminService.loadHeroMedia(), 4000);
-    setTimeout(()=>this.loadReviews(),5000);
+    setTimeout(()=>this.loadReviews(), 5000);
+    setTimeout(()=>this.loadQueries(), 6000); // 🔑 Add this!
   }
 
   // ==========================================
@@ -103,6 +105,9 @@ export class AdminComponent implements OnInit {
     }
   }
 
+// ==========================================
+  // PRODUCT IMAGE UPLOADS
+  // ==========================================
   onFileSelected(event: Event, index: number): void {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) return;
@@ -115,6 +120,8 @@ export class AdminComponent implements OnInit {
         this.imageUrls[index] = res.url; 
         this.isUploadingImage[index] = false; 
         input.value = ''; 
+        // Trigger the temporary green toast banner with the file name
+        this.setSuccessMessage(`Image "${file.name}" uploaded successfully!`);
       },
       error: (err) => {
         console.error(err);
@@ -124,7 +131,7 @@ export class AdminComponent implements OnInit {
     });
   }
 
-  // ==========================================
+// ==========================================
   // HERO IMAGE UPLOADS
   // ==========================================
   onHeroFileSelected(event: Event): void {
@@ -132,13 +139,15 @@ export class AdminComponent implements OnInit {
     if (!input.files || input.files.length === 0) return;
 
     const file = input.files[0];
-    this.uploadingFile = true; // Use uploadingFile, not isLoading
+    this.uploadingFile = true; 
     
     this.adminService.uploadHeroImage(file).subscribe({
       next: (response) => {
         this.newSlide.media_url = response.url;
         this.uploadingFile = false;
-        input.value = ''; // Reset input
+        input.value = ''; 
+        // Trigger the temporary green toast banner with the file name
+        this.setSuccessMessage(`Hero banner "${file.name}" uploaded successfully!`);
       },
       error: (err) => {
         console.error('Upload failed', err);
@@ -381,5 +390,32 @@ export class AdminComponent implements OnInit {
   private setErrorMessage(message: string): void {
     this.errorMessage.set(message);
     setTimeout(() => this.errorMessage.set(''), 4000);
+  }
+
+
+  // ==========================================
+  // SUPPORT TICKETS (CONTACT QUERIES)
+  // ==========================================
+  loadQueries(): void {
+    this.adminService.getContactQueries().subscribe({
+      next: (data) => { this.contactQueries = data; },
+      error: (err) => { 
+        console.error(err); 
+        this.setErrorMessage('Could not load support tickets.'); 
+      }
+    });
+  }
+
+  markQueryResolved(id: number): void {
+    this.adminService.resolveContactQuery(id).subscribe({
+      next: () => {
+        this.setSuccessMessage('Ticket marked as resolved!');
+        this.loadQueries(); // Refresh the list to show the updated status
+      },
+      error: (err) => {
+        console.error(err);
+        this.setErrorMessage('Failed to update ticket status.');
+      }
+    });
   }
 }

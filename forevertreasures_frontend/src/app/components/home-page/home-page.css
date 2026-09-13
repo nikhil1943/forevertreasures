@@ -325,7 +325,10 @@
   color: #000;
 }
 
-/* --- TESTIMONIALS CAROUSEL --- */
+/* ==============================
+   REFINED TESTIMONIALS CAROUSEL & MODAL
+   ============================== */
+
 .testimonials-section {
   padding: 2rem 0 5rem;
   background-color: #000;
@@ -353,20 +356,53 @@
 
 .review-card {
   flex: 0 0 auto; 
-  width: 350px;
+  width: 320px; /* Slightly narrower */
+  height: 220px; /* 🔑 Fixed height to reduce vertical size by ~30% */
   background: #0a0a0a;
   border: 1px solid rgba(212, 175, 55, 0.2);
-  padding: 2rem;
+  padding: 1.5rem; /* Reduced from 2rem */
   border-radius: 4px;
   scroll-snap-align: center;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, transform 0.3s;
 }
+
 
 .review-card:hover {
   border-color: #d4af37;
+  transform: translateY(-3px);
+}
+
+.review-text-wrapper {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.clamped-text {
+  display: -webkit-box;
+  -webkit-line-clamp: 3; /* Cuts text off after 3 lines */
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  margin-bottom: 0.2rem;
+}
+
+.read-more {
+  color: #d4af37;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  cursor: pointer;
+  align-self: flex-start;
+  transition: color 0.2s;
+}
+
+.read-more:hover {
+  color: #f3e5ab;
+  text-decoration: underline;
 }
 
 .review-stars {
@@ -395,6 +431,51 @@
   color: #d4af37;
   font-weight: bold;
   letter-spacing: 1px;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-content.review-modal {
+  background: #0a0a0a;
+  border: 1px solid #d4af37;
+  border-radius: 4px;
+  padding: 2.5rem;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.8);
+}
+
+.modal-close {
+  position: absolute;
+  top: 15px; right: 20px;
+  background: transparent; 
+  border: none; 
+  color: #d4af37; 
+  font-size: 1.5rem; 
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.modal-close:hover {
+  transform: scale(1.2);
+}
+
+.full-text {
+  -webkit-line-clamp: unset;
+  line-clamp: unset;
+  overflow: visible;
+  font-size: 1.1rem;
 }
 
 
@@ -478,5 +559,172 @@
 
   .hero-title {
     font-size: 1.8rem;
+  }
+}
+
+
+
+/* ==============================
+   FOOTER SECTION (4-COLUMN)
+   ============================== */
+.site-footer {
+  background-color: #050505; 
+  border-top: 1px solid rgba(212, 175, 55, 0.15);
+  padding: 4rem 5% 2rem;
+  font-family: var(--font-body, inherit);
+  position: relative;
+}
+
+.footer-grid {
+  display: grid;
+  /* Replicates the 4-column layout */
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 3rem;
+  margin-bottom: 4rem;
+}
+
+.footer-col h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: #fff; /* White headers like the reference */
+  margin-bottom: 1.5rem;
+  letter-spacing: 0.5px;
+}
+
+.footer-links {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.footer-links a {
+  color: #999;
+  text-decoration: none;
+  font-size: 0.9rem;
+  transition: color 0.3s;
+}
+
+.footer-links a:hover {
+  color: #d4af37;
+}
+
+/* Social Circles */
+.social-icons-row {
+  display: flex;
+  gap: 0.8rem;
+  flex-wrap: wrap;
+}
+
+.social-circle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #999;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.social-circle svg {
+  width: 18px;
+  height: 18px;
+}
+
+.social-circle:hover {
+  background-color: #d4af37;
+  border-color: #d4af37;
+  color: #000;
+  transform: translateY(-2px);
+}
+
+/* Footer Contact List (Column 4) */
+.footer-contact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.footer-contact-list li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  color: #999;
+  font-size: 0.9rem;
+}
+
+.footer-contact-list svg {
+  width: 18px;
+  height: 18px;
+  color: #d4af37; /* Gold Icons */
+  flex-shrink: 0;
+}
+
+/* Secure Checkout Trust Badge */
+.payment-trust {
+  margin-top: 2rem;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  letter-spacing: 0.5px;
+}
+
+.payment-trust .lock-icon {
+  width: 16px;
+  height: 16px;
+  color: #d4af37;
+}
+
+/* Footer Bottom */
+.footer-bottom {
+  text-align: center;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  color: #777;
+  font-size: 0.85rem;
+  position: relative; /* Anchor for the scroll button */
+}
+
+/* Scroll To Top Button */
+.scroll-to-top {
+  position: absolute;
+  right: 0;
+  bottom: 0px;
+  width: 45px;
+  height: 45px;
+  background-color: #d4af37;
+  color: #000;
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.3s, background-color 0.3s;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.scroll-to-top:hover {
+  background-color: #f3e5ab;
+  transform: translateY(-3px);
+}
+
+@media (max-width: 768px) {
+  .scroll-to-top {
+    position: static;
+    margin: 1.5rem auto 0;
   }
 }

@@ -1,9 +1,11 @@
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { Observable, of, switchMap } from 'rxjs';
+import { CheckoutService } from '../../services/checkout-service';
+import { Cart } from '../../services/cart';
 
 declare var Razorpay: any;
 
@@ -29,7 +31,8 @@ export interface SavedAddress {
 })
 export class CheckoutComponent implements OnInit {
   private fb = inject(FormBuilder);
-  private http = inject(HttpClient);
+  private checkoutService = inject(CheckoutService);
+  private cart = inject(Cart);
   private router = inject(Router);
 
   savedAddresses: SavedAddress[] = [];
@@ -77,7 +80,8 @@ export class CheckoutComponent implements OnInit {
 
   private loadSavedAddresses(): void {
     this.isLoading.set(true);
-    this.http.get<SavedAddress[]>('/api/user/addresses').subscribe({
+    // Routed through CheckoutService
+    this.checkoutService.getSavedAddresses().subscribe({
       next: (addresses) => {
         this.savedAddresses = addresses;
         this.isLoading.set(false);
@@ -159,8 +163,9 @@ export class CheckoutComponent implements OnInit {
     const line2 = formVal.addressLine2 ? `, ${formVal.addressLine2}` : '';
     const formattedAddress = `${formVal.addressLine1}${line2}, ${formVal.state} ${formVal.zipCode}`;
 
+    // Routed through CheckoutService
     const saveAddress$: Observable<unknown> = (formVal.addressMode === 'custom' && formVal.saveAddress)
-      ? this.http.post<SavedAddress[]>('/api/user/addresses', {
+      ? this.checkoutService.saveAddress({
           label: 'Saved Address',
           fullName: formVal.customer_name,
           phone: '',
@@ -175,13 +180,19 @@ export class CheckoutComponent implements OnInit {
 
     saveAddress$.pipe(
       switchMap(() => {
+        // Map your cart signal items to the format the backend expects
+        const cartItemsPayload = this.cart.items().map(item => ({
+          product_id: item.product.id,
+          quantity: item.quantity
+        }));
+
         const orderPayload: Record<string, any> = {
           customer_name: formVal.customer_name,
           email: formVal.email,
           currency: formVal.currency,
           payment_method: formVal.paymentMethod,
-          total_amount: formVal.currency === 'INR' ? 24999 : 299.99,
-          items: [{ product_id: 1, quantity: 1 }]
+          total_amount: this.cart.totalPrice(), // Pulls dynamic total price signal
+          items: cartItemsPayload // Pulls dynamic cart contents
         };
 
         if (formVal.addressMode === 'saved') {
@@ -191,7 +202,8 @@ export class CheckoutComponent implements OnInit {
           orderPayload['city'] = formVal.city;
         }
 
-        return this.http.post<any>('/api/orders', orderPayload);
+        // Routed through CheckoutService
+        return this.checkoutService.placeOrder(orderPayload);
       })
     ).subscribe({
       next: (res) => {
@@ -245,9 +257,11 @@ export class CheckoutComponent implements OnInit {
   }
 
   private verifyRazorpayPayment(payload: any): void {
-    this.http.post('/api/payments/verify-razorpay', payload).subscribe({
+    // Routed through CheckoutService
+    this.checkoutService.verifyRazorpay(payload).subscribe({
       next: () => {
         this.isSubmitting.set(false);
+        this.cart.clearCart();
         this.router.navigate(['/order-confirmation', payload.order_id]);
       },
       error: (err: HttpErrorResponse) => {

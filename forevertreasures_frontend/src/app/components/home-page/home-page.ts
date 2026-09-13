@@ -2,9 +2,8 @@ import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { Component, OnInit, OnDestroy, inject, PLATFORM_ID } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { ProductService, Product, Category, HeroMedia } from '../../services/product';
-
-// Import the dedicated feedback service
 import { FeedbackService, Review } from '../../services/feedback';
+import { environment } from '../../../environments/prod/environment';
 
 @Component({
   selector: 'app-home-page',
@@ -26,39 +25,53 @@ export class HomePage implements OnInit, OnDestroy {
   reviews: Review[] = []; 
   currentReviewIndex = 0;
   private reviewAutoScrollTimer: any;
+  
+  // 🔑 State for the Review Popup
+  selectedReview: Review | null = null;
+  
+  // Footer dynamic year
+  currentYear = new Date().getFullYear();
 
   currentSlideIndex = 0;
   private slideTimeout: any;
 
+
+  // ==========================================
+  // FOOTER LOGIC
+  // ==========================================
+
+  supportEmail = environment.supportEmail;
+  
+  scrollToTop(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+
+
+
   ngOnInit(): void {
-    // Wrap inside platform check to prevent Vercel build timeouts during SSR
     if (isPlatformBrowser(this.platformId)) {
       this.loadData();
-      this.startReviewAutoScroll(); // Start the testimonial carousel
+      this.startReviewAutoScroll();
     }
   }
 
   loadData(): void {
-    // 1. Load Hero Slides
     this.productService.getHeroMedia().subscribe(media => {
       this.heroMedia = media;
-      if (this.heroMedia.length > 0) {
-        this.startSlideTimer();
-      }
+      if (this.heroMedia.length > 0) this.startSlideTimer();
     });
 
-    // 2. Load Categories
     this.productService.getCategories().subscribe(cats => {
-      this.categories = cats.slice(0, 4); // Show top 4 categories
+      this.categories = cats.slice(0, 4);
     });
 
-    // 3. Load Featured Products (First 4)
     this.productService.getProducts(undefined, undefined, undefined, undefined, 4, 0)
       .subscribe(products => {
         this.featuredProducts = products;
       });
 
-    // 4. Load Customer Reviews for the Testimonial Carousel
     this.feedbackService.getReviews().subscribe(data => {
       this.reviews = data;
     });
@@ -67,15 +80,32 @@ export class HomePage implements OnInit, OnDestroy {
   // ==========================================
   // TESTIMONIALS LOGIC
   // ==========================================
-  
   getStarsArray(rating: number): number[] {
     return Array(rating).fill(0);
+  }
+
+  // 🔑 Modal Handlers
+  openReviewModal(review: Review): void {
+    this.selectedReview = review;
+    // Prevent background scrolling while modal is open
+    if (isPlatformBrowser(this.platformId)) {
+      document.body.style.overflow = 'hidden';
+      this.stopReviewAutoScroll();
+    }
+  }
+
+  closeReviewModal(): void {
+    this.selectedReview = null;
+    if (isPlatformBrowser(this.platformId)) {
+      document.body.style.overflow = '';
+      this.startReviewAutoScroll();
+    }
   }
 
   startReviewAutoScroll(): void {
     this.reviewAutoScrollTimer = setInterval(() => {
       this.nextReview();
-    }, 5000); // Auto-scrolls every 5 seconds
+    }, 5000);
   }
 
   stopReviewAutoScroll(): void {
@@ -96,37 +126,19 @@ export class HomePage implements OnInit, OnDestroy {
     }
   }
 
-  manualNext(): void {
-    this.stopReviewAutoScroll();
-    this.nextReview();
-    this.startReviewAutoScroll();
-  }
-  
-  manualPrev(): void {
-    this.stopReviewAutoScroll();
-    this.prevReview();
-    this.startReviewAutoScroll();
-  }
-
   // ==========================================
   // SLIDESHOW LOGIC
   // ==========================================
-  
   startSlideTimer(): void {
     this.clearTimer();
     const currentSlide = this.heroMedia[this.currentSlideIndex];
-    
-    // If it's an image, auto-advance after 5 seconds
-    // If it's a video, the (ended) HTML event will trigger nextSlide() instead
     if (currentSlide && currentSlide.media_type === 'IMAGE') {
       this.slideTimeout = setTimeout(() => this.nextSlide(), 5000);
     }
   }
 
   clearTimer(): void {
-    if (this.slideTimeout) {
-      clearTimeout(this.slideTimeout);
-    }
+    if (this.slideTimeout) clearTimeout(this.slideTimeout);
   }
 
   nextSlide(): void {
@@ -150,6 +162,6 @@ export class HomePage implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.clearTimer();
-    this.stopReviewAutoScroll(); // Clear intervals when leaving the homepage
+    this.stopReviewAutoScroll();
   }
 }

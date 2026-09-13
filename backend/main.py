@@ -6,17 +6,17 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional, Any
 
 import jwt
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 import stripe
 import razorpay
 from fastapi import FastAPI, Depends, HTTPException, Query, status, APIRouter, Request, Header, BackgroundTasks, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.staticfiles import StaticFiles # 🔑 NEW: Required for local image serving
 from passlib.context import CryptContext
 from sqlalchemy.orm import Session, joinedload
 from cachetools import TTLCache 
 from sqlalchemy import func
-from supabase import create_client
 
 import models
 import schemas
@@ -24,13 +24,27 @@ from database import get_db, engine
 from utils.security import (
     generate_otp, 
     send_2fa_email_task, 
-    # send_reset_password_email_task
 )
+
+from io import BytesIO
+from PIL import Image
 
 # Initialize database tables
 models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="ForeverTreasures API")
+
+# 🔑 NEW: Local Storage Setup
+UPLOAD_DIR = "uploads"
+PRODUCTS_DIR = os.path.join(UPLOAD_DIR, "product-images")
+HERO_DIR = os.path.join(UPLOAD_DIR, "hero-images")
+
+# Automatically create the directories on the VM if they don't exist
+os.makedirs(PRODUCTS_DIR, exist_ok=True)
+os.makedirs(HERO_DIR, exist_ok=True)
+
+# Mount the directory so the frontend can access images via URL
+app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # --- In-Memory Cache Setup ---
 category_cache = TTLCache(maxsize=10, ttl=300)
@@ -43,28 +57,17 @@ ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 15))
 RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("JWT_RESET_TOKEN_EXPIRE_MINUTES", 30))
 
-# Password hashing context initialization
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 security = HTTPBearer()
 security_optional = HTTPBearer(auto_error=False)
 
-# --- External SDKs Setup (Stripe, Razorpay, Supabase) ---
+# --- External SDKs Setup (Stripe, Razorpay) ---
 stripe.api_key = os.getenv("STRIPE_SECRET_KEY", "sk_test_YOUR_STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "whsec_YOUR_WEBHOOK_SECRET")
 
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID", "rzp_test_YOUR_KEY")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET", "YOUR_SECRET")
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
-
-# Set up Supabase Client for Image Uploads
-SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jedxyjvmsdwfaiwsryni.supabase.co")
-SUPABASE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "your-service-role-key-here")
-supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
-
-PRODUCT_IMG_BUCKET = os.getenv("PRODUCT_IMG_BUCKET")
-HERO_IMG_BUCKET = os.getenv("HERO_IMG_BUCKET")
-
 
 # --- CORS Configuration ---
 app.add_middleware(
@@ -174,12 +177,46 @@ class HeroMediaUpdate(BaseModel):
     is_active: Optional[bool] = None
 
 
+# --- Image Optimization Helper ---
+def optimize_image(file_bytes: bytes, is_hero: bool = False) -> bytes:
+    with Image.open(BytesIO(file_bytes)) as img:
+        if img.mode in ("RGBA", "P"):
+            img = img.convert("RGB")
+        
+        if is_hero:
+            target_ratio = 16 / 9
+            img_w, img_h = img.size
+            current_ratio = img_w / img_h
+            
+            if current_ratio > target_ratio:
+                new_w = int(img_h * target_ratio)
+                left = (img_w - new_w) / 2
+                img = img.crop((left, 0, left + new_w, img_h))
+            elif current_ratio < target_ratio:
+                new_h = int(img_w / target_ratio)
+                top = (img_h - new_h) / 2
+                img = img.crop((0, top, img_w, top + new_h))
+                
+            if img.size[0] > 1920:
+                new_w = 1920
+                new_h = int(new_w / target_ratio)
+                img = img.resize((new_w, new_h), Image.Resampling.LANCZOS)
+        else:
+            max_width = 1200
+            if img.size[0] > max_width:
+                width_percent = (max_width / float(img.size[0]))
+                new_height = int((float(img.size[1]) * float(width_percent)))
+                img = img.resize((max_width, new_height), Image.Resampling.LANCZOS)
+        
+        output = BytesIO()
+        img.save(output, format="WEBP", quality=85, optimize=True)
+        return output.getvalue()
+
 # --- Routers ---
 auth_router = APIRouter(prefix="/api/auth", tags=["Auth"])
 payment_router = APIRouter(prefix="/api/payments", tags=["Payments"])
 admin_router = APIRouter(prefix="/api/admin", tags=["Admin"], dependencies=[Depends(require_admin_user)])
 orders_router = APIRouter(prefix="/api/orders", tags=["Orders"])
-
 
 # ==========================================
 # AUTHENTICATION ENDPOINTS (/api/auth)
@@ -274,10 +311,8 @@ def verify_2fa(payload: schemas.Verify2FARequest, db: Session = Depends(get_db))
         user.two_factor_code_hash = None
         user.two_factor_expires_at = None
         db.commit()
-
         access_token = create_access_token(user.id)
         refresh_token = create_refresh_token(user.id, db)
-
         return {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -347,7 +382,6 @@ def forgot_password(
     user = db.query(models.User).filter(models.User.email == payload.email).first()
     if user:
         reset_token = create_password_reset_token(user.email)
-        # background_tasks.add_task(send_reset_password_email_task, user.email, reset_token)
     return {"message": "If an account with that email exists, a password reset link has been sent."}
 
 @auth_router.post("/reset-password")
@@ -371,36 +405,32 @@ def reset_password(payload: ResetPasswordRequest, db: Session = Depends(get_db))
 # ADMIN PORTAL ENDPOINTS (/api/admin)
 # ==========================================
 
-# 🔑 NEW: Upload Image Endpoint
+# 🔑 NEW: Upload Product Image to Local Storage
 @admin_router.post("/upload-image")
 def upload_product_image(
+    request: Request,
     file: UploadFile = File(...), 
     current_user: models.User = Depends(get_current_user_from_token)
 ):
     try:
-        # Read file
-        file_bytes = file.file.read()
-        file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-        unique_filename = f"media_{uuid.uuid4()}.{file_ext}"
+        raw_bytes = file.file.read()
+        optimized_bytes = optimize_image(raw_bytes, is_hero=False)
         
-        # 1. Define your exact bucket name here
-        bucket_name = PRODUCT_IMG_BUCKET
+        unique_filename = f"media_{uuid.uuid4().hex}.webp"
+        filepath = os.path.join(PRODUCTS_DIR, unique_filename)
         
-        # 2. Upload to Supabase Storage bucket
-        supabase.storage.from_(bucket_name).upload(
-            unique_filename,
-            file_bytes,
-            file_options={"content-type": file.content_type or "image/jpeg"}
-        )
+        # Write bytes directly to the Ubuntu VM
+        with open(filepath, "wb") as f:
+            f.write(optimized_bytes)
         
-        # 3. Let Supabase automatically generate the correct, web-safe URL!
-        public_url = supabase.storage.from_(bucket_name).get_public_url(unique_filename)
+        # Construct the local URL dynamically
+        base_url = str(request.base_url).rstrip("/")
+        public_url = f"{base_url}/uploads/product-images/{unique_filename}"
         
         return {"url": public_url}
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
-
 
 @admin_router.get("/dashboard-stats")
 def get_admin_dashboard_stats(db: Session = Depends(get_db)):
@@ -485,7 +515,6 @@ def delete_category(category_id: int, db: Session = Depends(get_db)):
 
 @admin_router.get("/products", response_model=List[schemas.ProductResponse])
 def get_admin_products(skip: int = 0, limit: int = 50, db: Session = Depends(get_db)):
-    # Re-added pagination constraint for admin portal
     if limit > 50:
         limit = 50 
     return db.query(models.Product).options(joinedload(models.Product.category)).offset(skip).limit(limit).all()
@@ -493,12 +522,10 @@ def get_admin_products(skip: int = 0, limit: int = 50, db: Session = Depends(get
 @admin_router.post("/products", response_model=schemas.ProductResponse, status_code=status.HTTP_201_CREATED)
 def create_admin_product(payload: schemas.ProductCreate, db: Session = Depends(get_db)):
     product_data = payload.model_dump()
-    
     new_product = models.Product(**product_data)
     db.add(new_product)
     db.commit()
     db.refresh(new_product)
-    
     product_cache.clear() 
     return db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == new_product.id).first()
 
@@ -515,7 +542,6 @@ def update_admin_product(product_id: int, payload: schemas.ProductCreate, db: Se
     db.commit()
     db.refresh(product)
     product_cache.clear()
-    
     return db.query(models.Product).options(joinedload(models.Product.category)).filter(models.Product.id == product.id).first()
 
 @admin_router.delete("/products/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -543,7 +569,6 @@ def create_hero_media(payload: schemas.HeroMediaCreate, db: Session = Depends(ge
     hero_media_cache.clear()
     return new_media
 
-# 🔑 NEW: Update Hero Media Endpoint (Fixes "Failed to update slide")
 @admin_router.put("/hero-media/{media_id}")
 def update_hero_media(media_id: int, payload: HeroMediaUpdate, db: Session = Depends(get_db)):
     media = db.query(models.HeroMedia).filter(models.HeroMedia.id == media_id).first()
@@ -569,27 +594,25 @@ def delete_hero_media(media_id: int, db: Session = Depends(get_db)):
     hero_media_cache.clear()
     return None
 
-# 🔑 NEW: Upload Hero Image Endpoint
+# 🔑 NEW: Upload Hero Image to Local Storage
 @admin_router.post("/upload-hero-image")
 def upload_hero_image(
+    request: Request,
     file: UploadFile = File(...), 
     current_user: models.User = Depends(get_current_user_from_token)
 ):
     try:
-        file_bytes = file.file.read()
-        file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
-        unique_filename = f"hero_{uuid.uuid4()}.{file_ext}"
+        raw_bytes = file.file.read()
+        optimized_bytes = optimize_image(raw_bytes, is_hero=True)
         
-        # Pointing to the new bucket
-        bucket_name = HERO_IMG_BUCKET
+        unique_filename = f"hero_{uuid.uuid4().hex}.webp"
+        filepath = os.path.join(HERO_DIR, unique_filename)
         
-        supabase.storage.from_(bucket_name).upload(
-            unique_filename,
-            file_bytes,
-            file_options={"content-type": file.content_type or "image/jpeg"}
-        )
+        with open(filepath, "wb") as f:
+            f.write(optimized_bytes)
         
-        public_url = supabase.storage.from_(bucket_name).get_public_url(unique_filename)
+        base_url = str(request.base_url).rstrip("/")
+        public_url = f"{base_url}/uploads/hero-images/{unique_filename}"
         
         return {"url": public_url}
         
@@ -598,7 +621,7 @@ def upload_hero_image(
 
 # ==========================================
 # PUBLIC STOREFRONT ENDPOINTS (/api/...)
-# ==========================================
+# ========================================== 
 
 @app.get("/api/user/addresses", response_model=List[schemas.AddressResponse])
 def get_user_addresses(current_user: models.User = Depends(get_current_user_from_token), db: Session = Depends(get_db)):
@@ -627,16 +650,13 @@ def delete_user_address(address_id: int, current_user: models.User = Depends(get
     db.commit()
     return db.query(models.Address).filter(models.Address.user_id == current_user.id).all()
 
-# --- Public Store Catalog & Product Details ---
 @app.get("/api/categories", response_model=List[schemas.CategoryResponse])
 def get_categories(db: Session = Depends(get_db)):
     cache_key = "public_categories"
-    
     if cache_key in category_cache:
         return category_cache[cache_key]
         
     categories = db.query(models.Category).all()
-    
     category_cache[cache_key] = categories
     return categories
 
@@ -651,7 +671,6 @@ def get_products(
     db: Session = Depends(get_db)
 ):
     cache_key = f"{search}_{category_id}_{min_price}_{max_price}_{limit}_{skip}"
-    
     if cache_key in product_cache:
         return product_cache[cache_key]
 
@@ -667,7 +686,6 @@ def get_products(
         query = query.filter(models.Product.price <= max_price)
 
     products = query.offset(skip).limit(limit).all()
-    
     product_cache[cache_key] = products
     return products
 
@@ -678,32 +696,13 @@ def get_product_by_id(product_id: int, db: Session = Depends(get_db)):
         raise HTTPException(status_code=404, detail="Product not found")
     return product
 
-
-@app.get("/api/orders/my-orders")
-def get_my_orders(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user_from_token)):
-    orders = db.query(models.Order)\
-               .filter(models.Order.user_id == current_user.id)\
-               .order_by(models.Order.created_at.desc())\
-               .all()
-    
-    return [
-        {
-            "id": order.id,
-            "date": order.created_at,
-            "total_amount": order.total,
-            "status": order.status
-        } for order in orders
-    ]
-
 # ==========================================
 # FEEDBACK MANAGEMENT LOGIC (/api/reviews)
 # ==========================================
-
 @app.post("/api/reviews", response_model=schemas.ReviewResponse, status_code=status.HTTP_201_CREATED)
 def submit_review(review: schemas.ReviewCreate, db: Session = Depends(get_db)):
     max_order = db.query(func.max(models.Review.display_order)).scalar()
     next_order = (max_order or 0) + 1
-
     new_review = models.Review(
         **review.model_dump(),
         display_order=next_order
@@ -818,7 +817,6 @@ def create_order(
 
     db.commit()
     db.refresh(new_order)
-    
     product_cache.clear()
 
     return {
@@ -836,11 +834,31 @@ def get_user_order_history(
 ):
     orders = (
         db.query(models.Order)
+        .options(
+            joinedload(models.Order.items).joinedload(models.OrderItem.product)
+        )
         .filter(models.Order.user_id == current_user.id)
         .order_by(models.Order.id.desc())
         .all()
     )
-    return orders
+    
+    return [
+        {
+            "id": order.id,
+            "date": order.created_at,
+            "total_amount": order.total_amount,
+            "status": order.status,
+            "items": [
+                {
+                    "product_id": item.product.id,
+                    "title": item.product.title,
+                    "price": item.price_at_purchase,
+                    "quantity": item.quantity,
+                    "image": item.product.image_urls[0] if getattr(item.product, 'image_urls', None) else "" 
+                } for item in order.items
+            ]
+        } for order in orders
+    ]
 
 @orders_router.get("/{order_id}")
 def get_order_details(
@@ -858,7 +876,6 @@ def get_order_details(
             status_code=status.HTTP_403_FORBIDDEN, 
             detail="You do not have permission to view this order"
         )
-    
     return order
 
 @orders_router.post("/{order_id}/cancel")
@@ -879,7 +896,7 @@ def cancel_order(
     if order.status.upper() not in cancellable_statuses:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Cannot cancel order with status '{order.status}'. Only pending or processing orders can be cancelled."
+            detail=f"Cannot cancel order with status '{order.status}'."
         )
     
     order.status = "CANCELLED"
@@ -892,14 +909,12 @@ def cancel_order(
     
     db.commit()
     db.refresh(order)
-    
     product_cache.clear()
     
     return {
         "message": f"Order #{order_id} successfully cancelled and stock returned to inventory.",
         "order": order
     }
-
 
 # ==========================================
 # PAYMENTS ROUTER (Stripe + Razorpay)
@@ -961,11 +976,9 @@ async def stripe_webhook(request: Request, stripe_signature: str = Header(None))
 
     return {"status": "success"}
 
-
 @app.get("/api/hero-media", response_model=List[schemas.HeroMediaResponse])
 def get_public_hero_media(db: Session = Depends(get_db)):
     cache_key = "active_hero_media"
-    
     if cache_key in hero_media_cache:
         return hero_media_cache[cache_key]
         
@@ -979,18 +992,11 @@ def get_public_hero_media(db: Session = Depends(get_db)):
 
 @app.get("/health")
 def health_check():
-    """
-    Super lightweight endpoint to keep Render awake. 
-    Does not query the database, ensuring an instant 200 OK response.
-    """
+    """Lightweight endpoint to confirm the backend VM is running."""
     return {"status": "healthy"}
 
 @app.get("/api/meta/version")
 def get_data_version(db: Session = Depends(get_db)):
-    """
-    Returns a lightweight summary of database counts/timestamps 
-    so the frontend knows instantly if data has changed.
-    """
     category_count = db.query(models.Category).count()
     product_count = db.query(models.Product).count()
     review_count = db.query(models.Review).count()
@@ -1000,6 +1006,48 @@ def get_data_version(db: Session = Depends(get_db)):
         "products": product_count,
         "reviews": review_count
     }
+    
+# ==========================================
+# USER QUERY HANDLER (DATABASE STORAGE)
+# ==========================================
+class ContactSubmit(BaseModel):
+    name: str
+    email: EmailStr
+    subject: str
+    message: str
+    
+@app.post("/api/contact", status_code=201)
+def submit_contact_form(contact_data: ContactSubmit, db: Session = Depends(get_db)):
+    try:
+        new_query = models.ContactQuery(
+            name=contact_data.name,
+            email=contact_data.email,
+            subject=contact_data.subject,
+            message=contact_data.message
+        )
+        db.add(new_query)
+        db.commit()
+        db.refresh(new_query)
+        
+        return {"detail": "Message saved successfully"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Failed to save message to database")
+
+@admin_router.get("/queries")
+def get_contact_queries(db: Session = Depends(get_db)):
+    queries = db.query(models.ContactQuery).order_by(models.ContactQuery.created_at.desc()).all()
+    return queries
+
+@admin_router.patch("/queries/{query_id}/resolve")
+def resolve_contact_query(query_id: int, db: Session = Depends(get_db)):
+    query = db.query(models.ContactQuery).filter(models.ContactQuery.id == query_id).first()
+    if not query:
+        raise HTTPException(status_code=404, detail="Query not found")
+    
+    query.status = "Resolved"
+    db.commit()
+    return {"detail": "Query marked as resolved"}
 
 # --- Register All APIRouters ---
 app.include_router(auth_router)

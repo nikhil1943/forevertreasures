@@ -71,3 +71,5 @@ backend/migration_script.py
 *.swo
 .DS_Store
 Thumbs.db
+
+forevertreasures_frontend\src\environments\prod\environment.ts

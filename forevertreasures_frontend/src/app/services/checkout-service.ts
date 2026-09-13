@@ -19,9 +19,21 @@ export interface CheckoutPayload {
 })
 export class CheckoutService {
   private http = inject(HttpClient);
-  private apiUrl = environment.apiUrl + '/orders'; // Adjust to match your backend URL
+  private apiUrl = environment.apiUrl; 
 
-  placeOrder(CheckoutData: CheckoutPayload): Observable<any> {
-    return this.http.post(this.apiUrl, CheckoutData);
+  getSavedAddresses(): Observable<any[]> {
+    return this.http.get<any[]>(`${this.apiUrl}/user/addresses`);
+  }
+
+  saveAddress(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/user/addresses`, payload);
+  }
+
+  placeOrder(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/orders`, payload);
+  }
+
+  verifyRazorpay(payload: any): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/payments/verify-razorpay`, payload);
   }
 }
